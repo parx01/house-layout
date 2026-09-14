@@ -1,38 +1,59 @@
 # Plan 66 house-plan editor
 
+Plan 66 is a local SVG editor for inspecting and adjusting the OPTION-3 rectangle prototype. The A0/A1 foundation adds exact architectural units, a strict ProjectV2 save format, explicit site metadata, editable design targets, and automated tests without introducing shared-wall topology.
+
 ## Open it
 
-Open `dist/index.html` in Google Chrome. The editor is completely local and does not need an internet connection.
+Serve the `dist` folder from a local web server, then open the printed local URL in Chrome. For example:
 
-Keep the entire `dist` folder together because the HTML uses the nearby CSS, JavaScript, and reference-plan image.
+```powershell
+python -m http.server 8765 --bind 127.0.0.1 --directory dist
+```
 
-## Edit the plan
+Open `http://127.0.0.1:8765/`. Keep the entire `dist` folder together because the editor loads its compiled foundation, stylesheet, and preserved reference image from nearby files.
 
-- **Move a room:** choose **Select**, then drag the room.
-- **Resize a room:** select it, then drag an edge or corner handle.
-- **Remove one side of a room:** click that wall, then choose **Delete**.
-- **Add a room:** choose **Add room**, then drag on the plan.
-- **Add a wall:** choose **Add wall**, then drag from its start to its end.
-- **Rename or size precisely:** select a room and use the inspector on the right.
-- **Undo or redo:** use the arrow buttons or `Ctrl+Z` / `Ctrl+Y`.
+## Edit the legacy prototype
 
-Your latest plan is saved automatically in that browser. **Save project** also downloads a JSON backup, and **Export SVG** creates a vector drawing that can later be imported into CAD software.
+- Move a room: choose **Select**, then drag the room.
+- Resize a room: select it, then drag an edge or corner handle.
+- Remove one side of a room: click that wall, then choose **Delete selected**.
+- Add a room or wall with the drawing tools.
+- Enter room and site lengths as architectural measurements such as `10'6"` or `49'2"`.
+- Undo or redo with the buttons or keyboard shortcuts.
 
-## 66% coverage rule
+The browser saves a strictly validated ProjectV2 document locally. **Save project** downloads the same V2 format. A corrupt project or an unsupported schema version is rejected explicitly; it is never shallow-merged into defaults.
 
-The limit is kept as a fixed calculation:
+## Exact site and supplied coverage limit
 
-`maximum covered area = plot width in feet × plot depth in feet × 0.66`
+- Frontage: **49'2"**
+- Depth: **79'2"**
+- Plot area: **3,892.3611 sq ft**
+- Supplied 66% maximum: **2,568.9583 sq ft**
 
-For the supplied **49.21 ft × 79.23 ft** plot (the original 15.00 m × 24.15 m site):
+The 66% figure is recorded as user-supplied and unverified. The editable 4-ft side, 8-ft minimum rear, and 10-ft preferred rear values are design targets, not statutory setbacks. The front target remains flexible and north remains unknown until authoritative information is available.
 
-- Plot area: **3,899.23 sq ft**
-- 66% maximum: **2,573.49 sq ft**
-- Starting design: **1,969.11 sq ft**
-- Starting remaining allowance: **604.38 sq ft**
+The visible **1,969.11 sq ft** covered-area number is explicitly a legacy rectangle-prototype estimate. ProjectV2 does not treat it as an authoritative building footprint. Exterior-envelope coverage is deferred to A4.
 
-Room dimensions, wall lengths, site dimensions, and editable inputs are shown in feet. All area totals are shown in square feet. Dragging snaps to **0.25 ft**, and the coverage meter updates continuously. Overlapping rooms are counted once.
+## A0/A1 engineering structure
 
-## Notes
+- `src/core`: branded integer unit helpers, geometry primitives, site calculations, design envelopes, and warning categories.
+- `src/project`: ProjectV2 types, strict validation, and the Option-3 baseline.
+- `src/persistence`: schema detection, V1 recovery wrapping, ProjectV2 serialization, and browser storage.
+- `src/ui`: the adapter that keeps the existing rectangle editor inspectable.
+- `fixtures`: immutable original V1 state and reference-image identity.
+- `docs`: ProjectV2 boundary and coordinate/orientation convention.
+- `test`: Vitest coverage for units, site calculations, validation, recovery, and preserved assets.
 
-The PDF is used as a visual tracing reference. Dimensions and permissions should be checked by your architect or local approving authority before construction.
+Install dependencies once, then run:
+
+```powershell
+npm run typecheck
+npm test
+npm run build
+```
+
+`npm run build` compiles the TypeScript foundation to `dist/foundation`. The existing SVG renderer remains a transitional legacy UI adapter until A2 supplies the curated topology model.
+
+## Construction note
+
+The supplied PDF remains a visual reference. Property dimensions, permissions, setbacks, and regulations must be confirmed by a qualified architect and the relevant local authority before construction.

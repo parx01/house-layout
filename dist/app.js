@@ -1,47 +1,29 @@
+import {
+  areaToSquareFeet,
+  createOption3ProjectV2,
+  decimalFeetToLength,
+  formatArchitecturalLength,
+  formatSquareFeet,
+  foundationSummary,
+  legacyMmToUm,
+  lengthUmToLegacyMm,
+  parseArchitecturalLength,
+  projectToLegacyEditorState,
+  readProjectFromStorage,
+  serializeProject,
+  updateProjectFromLegacyEditorState,
+  validateProjectV2,
+  writeProjectToStorage,
+} from "./foundation/browser.js";
+
 const SVG_NS = "http://www.w3.org/2000/svg";
-const STORAGE_KEY = "plan66-option3-v1";
 const TEST_MODE = new URLSearchParams(window.location.search).has("test");
 const MM_PER_FT = 304.8;
 const FT2_TO_MM2 = 92_903.04;
 const SNAP_MM = MM_PER_FT * 0.25;
 const MIN_ROOM_MM = MM_PER_FT * 2.5;
-
-const DEFAULT_ROOMS = [
-  ["bed-1", "Bedroom 1", 1680, 3280, 3964, 4572],
-  ["toilet-1", "Toilet 1", 5758, 3280, 1680, 2857],
-  ["dress-1", "Dress 1", 5758, 6138, 1680, 1715],
-  ["toilet-2", "Toilet 2", 7553, 3280, 1689, 2857],
-  ["dress-2", "Dress 2", 7553, 6138, 1689, 1715],
-  ["bed-2", "Bedroom 2", 9356, 3280, 3964, 4572],
-  ["puja", "Puja", 1680, 7967, 3166, 1640],
-  ["kitchen", "Kitchen", 1680, 9608, 3166, 3280],
-  ["stair", "Staircase", 1680, 13003, 3051, 3047],
-  ["lobby", "Lobby / Dining", 4846, 7967, 8474, 6102],
-  ["living", "Living Room", 4846, 14184, 3466, 4802],
-  ["wash", "Wash Area", 8311, 14184, 1539, 1521],
-  ["toilet-3", "Toilet 3", 8311, 15705, 1539, 3051],
-  ["guest", "Guest Bedroom", 9965, 14184, 3355, 4572],
-].map(([id, name, x, y, width, height]) => ({
-  id,
-  name,
-  x,
-  y,
-  width,
-  height,
-  included: true,
-  hiddenSides: [],
-}));
-
-const DEFAULT_STATE = {
-  site: { width: 15000, depth: 24150, coverageLimit: 0.66 },
-  commonAreaMm2: 15.6904280944 * 1_000_000,
-  rooms: DEFAULT_ROOMS,
-  walls: [],
-  reference: { show: true, opacity: 0.28 },
-  snap: true,
-  showLabels: true,
-};
-
+let project = createOption3ProjectV2();
+let projectLoadError = "";
 let state = loadState();
 let selected = null;
 let activeTool = "select";
@@ -65,12 +47,17 @@ function clone(value) {
 }
 
 function loadState() {
-  if (TEST_MODE) return clone(DEFAULT_STATE);
+  if (TEST_MODE) {
+    project = createOption3ProjectV2();
+    return projectToLegacyEditorState(project);
+  }
   try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    return saved ? { ...clone(DEFAULT_STATE), ...JSON.parse(saved) } : clone(DEFAULT_STATE);
-  } catch {
-    return clone(DEFAULT_STATE);
+    project = readProjectFromStorage(localStorage);
+    return projectToLegacyEditorState(project);
+  } catch (error) {
+    projectLoadError = error instanceof Error ? error.message : "The saved project is invalid.";
+    project = createOption3ProjectV2();
+    return projectToLegacyEditorState(project);
   }
 }
 
@@ -83,14 +70,25 @@ function saveState() {
   status.textContent = "Saving…";
   status.classList.add("saving");
   window.setTimeout(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
-    status.textContent = "Saved locally";
-    status.classList.remove("saving");
+    try {
+      project = updateProjectFromLegacyEditorState(project, state);
+      writeProjectToStorage(localStorage, project);
+      status.textContent = "Saved as ProjectV2";
+      status.classList.remove("saving");
+    } catch (error) {
+      status.textContent = "Save failed: invalid project";
+      status.classList.remove("saving");
+      showToast(error instanceof Error ? error.message : "Project validation failed");
+    }
   }, 120);
 }
 
+function snapshot() {
+  return { state: clone(state), project: clone(project) };
+}
+
 function pushHistory() {
-  history.push(clone(state));
+  history.push(snapshot());
   if (history.length > 60) history.shift();
   future = [];
   updateUndoButtons();
@@ -98,8 +96,8 @@ function pushHistory() {
 
 function undo() {
   if (!history.length) return;
-  future.push(clone(state));
-  state = history.pop();
+  future.push(snapshot());
+  ({ state, project } = history.pop());
   selected = null;
   render();
   saveState();
@@ -107,8 +105,8 @@ function undo() {
 
 function redo() {
   if (!future.length) return;
-  history.push(clone(state));
-  state = future.pop();
+  history.push(snapshot());
+  ({ state, project } = future.pop());
   selected = null;
   render();
   saveState();
@@ -138,7 +136,7 @@ function pointFromEvent(event) {
 }
 
 function formatFeet(mm) {
-  return `${(mm / MM_PER_FT).toFixed(2)} ft`;
+  return formatArchitecturalLength(legacyMmToUm(mm));
 }
 
 function formatSqFt(mm2) {
@@ -181,9 +179,19 @@ function unionArea(rectangles) {
 function coverageValues() {
   const roomArea = unionArea(state.rooms.filter((room) => room.included));
   const designed = roomArea + state.commonAreaMm2;
-  const plot = state.site.width * state.site.depth;
-  const max = plot * state.site.coverageLimit;
-  return { roomArea, designed, plot, max, percent: plot ? (designed / plot) * 100 : 0, remaining: max - designed };
+  const siteSummary = foundationSummary(project);
+  const plot = siteSummary.plotAreaUm2 / 1_000_000;
+  const max = siteSummary.maximumCoverageUm2 / 1_000_000;
+  return {
+    roomArea,
+    designed,
+    plot,
+    max,
+    plotAreaUm2: siteSummary.plotAreaUm2,
+    maximumCoverageUm2: siteSummary.maximumCoverageUm2,
+    percent: plot ? (designed / plot) * 100 : 0,
+    remaining: max - designed,
+  };
 }
 
 function renderSite() {
@@ -196,12 +204,32 @@ function renderSite() {
     class: "site-boundary",
   });
   siteLayer.append(boundary);
+
+  const summary = foundationSummary(project);
+  const envelope = summary.minimumEnvelope;
+  siteLayer.append(el("rect", {
+    x: lengthUmToLegacyMm(envelope.xUm),
+    y: lengthUmToLegacyMm(envelope.yUm),
+    width: lengthUmToLegacyMm(envelope.widthUm),
+    height: lengthUmToLegacyMm(envelope.depthUm),
+    class: "buildable-envelope",
+  }));
+  siteLayer.append(el("line", {
+    x1: lengthUmToLegacyMm(summary.preferredEnvelope.xUm),
+    y1: lengthUmToLegacyMm(summary.preferredEnvelope.yUm),
+    x2: lengthUmToLegacyMm(summary.preferredEnvelope.xUm + summary.preferredEnvelope.widthUm),
+    y2: lengthUmToLegacyMm(summary.preferredEnvelope.yUm),
+    class: "preferred-rear-line",
+  }));
+
   const road = el("text", {
     x: state.site.width / 2,
     y: state.site.depth - 420,
     class: "road-label",
   });
-  road.textContent = "ROAD · 12.00 M WIDE";
+  road.textContent = project.site.road.widthUm === null
+    ? "ROAD · FRONT EDGE"
+    : `ROAD · ${formatArchitecturalLength(project.site.road.widthUm)} WIDE`;
   siteLayer.append(road);
 }
 
@@ -378,8 +406,8 @@ function renderCoverage() {
   const values = coverageValues();
   const over = values.remaining < 0;
   document.querySelector("#coverage-percent").textContent = values.percent.toFixed(2);
-  document.querySelector("#plot-area").textContent = formatSqFt(values.plot);
-  document.querySelector("#max-covered").textContent = formatSqFt(values.max);
+  document.querySelector("#plot-area").textContent = formatSquareFeet(values.plotAreaUm2, 4);
+  document.querySelector("#max-covered").textContent = formatSquareFeet(values.maximumCoverageUm2, 4);
   document.querySelector("#designed-coverage").textContent = formatSqFt(values.designed);
   document.querySelector("#remaining-area").textContent = `${over ? "−" : ""}${formatSqFt(Math.abs(values.remaining))}`;
   const fill = document.querySelector("#coverage-bar-fill");
@@ -387,7 +415,7 @@ function renderCoverage() {
   fill.style.background = over ? "#ff7272" : "#18a999";
   const status = document.querySelector("#coverage-status");
   status.classList.toggle("over", over);
-  status.querySelector("strong").textContent = over ? "Over the 66% limit" : "Within the 66% limit";
+  status.querySelector("strong").textContent = over ? "Legacy estimate exceeds 66%" : "Legacy estimate is within 66%";
 }
 
 function renderSelection() {
@@ -405,8 +433,8 @@ function renderSelection() {
     selectionForm.innerHTML = `
       <div><div class="selection-name">${escapeHtml(room.name)}</div><div class="selection-type">Room</div></div>
       <label class="selection-field">Name <span><input name="name" value="${escapeHtml(room.name)}" style="width:130px;text-align:left"></span></label>
-      <label class="selection-field">Width <span><input name="width" type="number" min="2.5" step="0.25" value="${(room.width / MM_PER_FT).toFixed(2)}"> ft</span></label>
-      <label class="selection-field">Depth <span><input name="height" type="number" min="2.5" step="0.25" value="${(room.height / MM_PER_FT).toFixed(2)}"> ft</span></label>
+      <label class="selection-field">Width <span><input name="width" type="text" inputmode="text" value="${escapeHtml(formatFeet(room.width))}"></span></label>
+      <label class="selection-field">Depth <span><input name="height" type="text" inputmode="text" value="${escapeHtml(formatFeet(room.height))}"></span></label>
       <div class="selection-field">Room area <span>${formatSqFt(room.width * room.height)}</span></div>
       <label class="coverage-check"><input name="included" type="checkbox" ${room.included ? "checked" : ""}> Count this room toward coverage</label>
       <div class="selection-actions"><button type="button" class="danger-button" data-delete>Delete room</button></div>`;
@@ -441,9 +469,23 @@ function render() {
   document.querySelector("#reference-layer").style.display = state.reference.show ? "block" : "none";
   document.querySelector("#reference-layer").style.opacity = state.reference.opacity;
   document.querySelector("#grid-layer").style.display = state.snap ? "block" : "none";
-  document.querySelector("#site-width").value = (state.site.width / MM_PER_FT).toFixed(2);
-  document.querySelector("#site-depth").value = (state.site.depth / MM_PER_FT).toFixed(2);
+  document.querySelector("#grid-layer").setAttribute("width", String(state.site.width));
+  document.querySelector("#grid-layer").setAttribute("height", String(state.site.depth));
+  document.querySelector("#reference-layer image").setAttribute("width", String(state.site.width));
+  document.querySelector("#reference-layer image").setAttribute("height", String(state.site.depth));
+  document.querySelector("#site-width").value = formatArchitecturalLength(project.site.boundary.widthUm);
+  document.querySelector("#site-depth").value = formatArchitecturalLength(project.site.boundary.depthUm);
   document.querySelector("#common-area").value = (state.commonAreaMm2 / FT2_TO_MM2).toFixed(2);
+  document.querySelector("#left-target").value = formatArchitecturalLength(project.site.designSetbacks.leftUm);
+  document.querySelector("#right-target").value = formatArchitecturalLength(project.site.designSetbacks.rightUm);
+  document.querySelector("#rear-min-target").value = formatArchitecturalLength(project.site.designSetbacks.rearMinUm);
+  document.querySelector("#rear-preferred-target").value = formatArchitecturalLength(project.site.designSetbacks.rearPreferredUm);
+  document.querySelector("#front-target").value = project.site.designSetbacks.frontMinUm === null
+    ? "Flexible"
+    : formatArchitecturalLength(project.site.designSetbacks.frontMinUm);
+  document.querySelector("#north-status").textContent = project.site.orientation.northAngleDeg === null
+    ? "Not established"
+    : `${project.site.orientation.northAngleDeg}° clockwise from plan up`;
   document.querySelector("#show-reference").checked = state.reference.show;
   document.querySelector("#reference-opacity").value = Math.round(state.reference.opacity * 100);
   document.querySelector("#opacity-output").textContent = `${Math.round(state.reference.opacity * 100)}%`;
@@ -631,12 +673,18 @@ selectionForm.addEventListener("change", (event) => {
   if (selected?.type !== "room") return;
   const room = state.rooms.find((item) => item.id === selected.id);
   if (!room) return;
-  pushHistory();
   const field = event.target.name;
-  if (field === "name") room.name = event.target.value.trim() || "Room";
-  if (field === "width") room.width = Math.max(MIN_ROOM_MM, Number(event.target.value) * MM_PER_FT);
-  if (field === "height") room.height = Math.max(MIN_ROOM_MM, Number(event.target.value) * MM_PER_FT);
-  if (field === "included") room.included = event.target.checked;
+  try {
+    let parsedLength = null;
+    if (field === "width" || field === "height") parsedLength = parseArchitecturalLength(event.target.value);
+    pushHistory();
+    if (field === "name") room.name = event.target.value.trim() || "Room";
+    if (field === "width") room.width = Math.max(MIN_ROOM_MM, lengthUmToLegacyMm(parsedLength));
+    if (field === "height") room.height = Math.max(MIN_ROOM_MM, lengthUmToLegacyMm(parsedLength));
+    if (field === "included") room.included = event.target.checked;
+  } catch (error) {
+    showToast(error instanceof Error ? error.message : "Invalid dimension");
+  }
   render();
   saveState();
 });
@@ -664,9 +712,42 @@ document.querySelector("#show-labels").addEventListener("change", (event) => {
 
 [["site-width", "width"], ["site-depth", "depth"]].forEach(([id, key]) => {
   document.querySelector(`#${id}`).addEventListener("change", (event) => {
-    pushHistory();
-    state.site[key] = Math.max(MM_PER_FT, Number(event.target.value) * MM_PER_FT);
-    render(); saveState();
+    try {
+      const parsed = parseArchitecturalLength(event.target.value);
+      const candidate = clone(project);
+      candidate.site.boundary[key === "width" ? "widthUm" : "depthUm"] = parsed;
+      validateProjectV2(candidate);
+      pushHistory();
+      state.site[key] = lengthUmToLegacyMm(parsed);
+      project = candidate;
+      render(); saveState();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Invalid site dimension");
+      render();
+    }
+  });
+});
+
+[
+  ["left-target", "leftUm"],
+  ["right-target", "rightUm"],
+  ["rear-min-target", "rearMinUm"],
+  ["rear-preferred-target", "rearPreferredUm"],
+].forEach(([id, key]) => {
+  document.querySelector(`#${id}`).addEventListener("change", (event) => {
+    try {
+      const parsed = parseArchitecturalLength(event.target.value, { allowZero: true });
+      const nextSetbacks = { ...project.site.designSetbacks, [key]: parsed };
+      const candidate = clone(project);
+      candidate.site.designSetbacks = nextSetbacks;
+      validateProjectV2(candidate);
+      pushHistory();
+      project = candidate;
+      render(); saveState();
+    } catch (error) {
+      showToast(error instanceof Error ? error.message : "Invalid design target");
+      render();
+    }
   });
 });
 document.querySelector("#common-area").addEventListener("change", (event) => {
@@ -691,7 +772,8 @@ document.querySelector("#fit-plan").addEventListener("click", () => { zoom = 1; 
 document.querySelector("#reset-plan").addEventListener("click", () => {
   if (!window.confirm("Reset all rooms, walls, and coverage inputs to the OPTION-3 starting plan?")) return;
   pushHistory();
-  state = clone(DEFAULT_STATE);
+  project = createOption3ProjectV2();
+  state = projectToLegacyEditorState(project);
   selected = null;
   render(); saveState(); showToast("Plan reset");
 });
@@ -707,8 +789,13 @@ function download(name, type, content) {
 }
 
 document.querySelector("#export-json").addEventListener("click", () => {
-  download("option-3-plan66.json", "application/json", JSON.stringify({ version: 1, savedAt: new Date().toISOString(), ...state }, null, 2));
-  showToast("Project file downloaded");
+  try {
+    project = updateProjectFromLegacyEditorState(project, state);
+    download("option-3-plan66-v2.json", "application/json", serializeProject(project));
+    showToast("Validated ProjectV2 file downloaded");
+  } catch (error) {
+    showToast(error instanceof Error ? error.message : "Project validation failed");
+  }
 });
 
 document.querySelector("#export-svg").addEventListener("click", () => {
@@ -754,20 +841,22 @@ function registerAgentTools() {
   register({
     name: "read_plan_summary",
     title: "Read plan summary",
-    description: "Read the current plot, coverage, room, and wall summary without changing the plan.",
+    description: "Read the exact ProjectV2 site limits and the clearly separated legacy prototype estimate.",
     inputSchema: { type: "object", properties: {}, additionalProperties: false },
     annotations: { readOnlyHint: true, untrustedContentHint: false },
     execute() {
       const values = coverageValues();
       return {
-        plotWidthFt: state.site.width / MM_PER_FT,
-        plotDepthFt: state.site.depth / MM_PER_FT,
+        schemaVersion: project.schemaVersion,
+        plotWidth: formatArchitecturalLength(project.site.boundary.widthUm),
+        plotDepth: formatArchitecturalLength(project.site.boundary.depthUm),
         coverageLimitPercent: state.site.coverageLimit * 100,
-        plotAreaSqFt: values.plot / FT2_TO_MM2,
-        maximumCoverageSqFt: values.max / FT2_TO_MM2,
-        designedCoverageSqFt: values.designed / FT2_TO_MM2,
-        coveragePercent: values.percent,
-        remainingSqFt: values.remaining / FT2_TO_MM2,
+        plotAreaSqFt: areaToSquareFeet(values.plotAreaUm2),
+        maximumCoverageSqFt: areaToSquareFeet(values.maximumCoverageUm2),
+        legacyPrototypeDesignedCoverageSqFt: values.designed / FT2_TO_MM2,
+        legacyPrototypeCoveragePercent: values.percent,
+        legacyPrototypeRemainingSqFt: values.remaining / FT2_TO_MM2,
+        authoritativeFootprintCoverageStatus: project.building.coverageStatus,
         roomCount: state.rooms.length,
         addedWallCount: state.walls.length,
       };
@@ -818,7 +907,7 @@ function registerAgentTools() {
   register({
     name: "set_plan_coverage_inputs",
     title: "Set coverage inputs",
-    description: "Update editable plot dimensions or wall/common covered area. The fixed 66 percent limit cannot be changed.",
+    description: "Update exact plot dimensions from compatibility decimal feet or the legacy wall/common estimate. The supplied 66 percent limit cannot be changed.",
     inputSchema: {
       type: "object",
       properties: {
@@ -831,9 +920,22 @@ function registerAgentTools() {
     annotations: { readOnlyHint: false, untrustedContentHint: false },
     execute(input) {
       if (!input || !Object.keys(input).length) throw new Error("Provide at least one coverage input.");
+      const candidate = clone(project);
+      let width = null;
+      let depth = null;
+      if (Number.isFinite(input.plotWidthFt)) {
+        width = decimalFeetToLength(input.plotWidthFt);
+        candidate.site.boundary.widthUm = width;
+      }
+      if (Number.isFinite(input.plotDepthFt)) {
+        depth = decimalFeetToLength(input.plotDepthFt);
+        candidate.site.boundary.depthUm = depth;
+      }
+      validateProjectV2(candidate);
       pushHistory();
-      if (Number.isFinite(input.plotWidthFt)) state.site.width = input.plotWidthFt * MM_PER_FT;
-      if (Number.isFinite(input.plotDepthFt)) state.site.depth = input.plotDepthFt * MM_PER_FT;
+      project = candidate;
+      if (width !== null) state.site.width = lengthUmToLegacyMm(width);
+      if (depth !== null) state.site.depth = lengthUmToLegacyMm(depth);
       if (Number.isFinite(input.wallCommonAreaSqFt)) state.commonAreaMm2 = input.wallCommonAreaSqFt * FT2_TO_MM2;
       render();
       saveState();
@@ -846,3 +948,7 @@ function registerAgentTools() {
 render();
 setTool("select");
 registerAgentTools();
+if (projectLoadError) {
+  document.querySelector("#save-status").textContent = "Saved project rejected";
+  showToast(`Saved project was not loaded: ${projectLoadError}`);
+}

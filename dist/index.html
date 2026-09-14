@@ -121,14 +121,14 @@
                 <feDropShadow dx="0" dy="0" stdDeviation="90" flood-color="#f4b942" flood-opacity="0.7" />
               </filter>
             </defs>
-            <rect id="grid-layer" x="0" y="0" width="15000" height="24150" fill="url(#grid)" />
+            <rect id="grid-layer" x="0" y="0" width="14986" height="24130" fill="url(#grid)" />
             <g id="reference-layer">
               <image
                 href="assets/option-3-reference.png"
                 x="0"
                 y="0"
-                width="15000"
-                height="24144.62"
+                width="14986"
+                height="24130"
                 preserveAspectRatio="none"
               />
             </g>
@@ -138,7 +138,7 @@
             <g id="interaction-layer"></g>
           </svg>
 
-          <div class="scale-note">Dimensions in feet · snapping 0.25 ft</div>
+          <div class="scale-note">Architectural feet/inches · snapping 3 inches</div>
         </div>
       </section>
 
@@ -146,10 +146,10 @@
         <section class="coverage-card" aria-labelledby="coverage-heading">
           <div class="coverage-header">
             <div>
-              <span class="eyebrow">Site coverage</span>
-              <h2 id="coverage-heading"><span id="coverage-percent">50.50</span>%</h2>
+              <span class="eyebrow">Legacy prototype estimate</span>
+              <h2 id="coverage-heading"><span id="coverage-percent">50.50</span>% <small>legacy</small></h2>
             </div>
-            <div class="limit-badge">Limit 66%</div>
+            <div class="limit-badge">Supplied limit 66%</div>
           </div>
           <div class="coverage-bar" aria-hidden="true">
             <div id="coverage-bar-fill"></div>
@@ -162,20 +162,27 @@
           <dl class="metric-list">
             <div><dt>Plot area</dt><dd id="plot-area">3899.23 sq ft</dd></div>
             <div><dt>66% maximum</dt><dd id="max-covered">2573.49 sq ft</dd></div>
-            <div><dt>Total covered area</dt><dd id="designed-coverage">1969.11 sq ft</dd></div>
-            <div><dt>Remaining allowance</dt><dd id="remaining-area">604.38 sq ft</dd></div>
+            <div><dt>Prototype covered estimate</dt><dd id="designed-coverage">1969.11 sq ft</dd></div>
+            <div><dt>Prototype allowance</dt><dd id="remaining-area">599.85 sq ft</dd></div>
           </dl>
         </section>
 
         <section class="panel-section inputs-section">
-          <div class="section-title">Coverage inputs</div>
+          <div class="section-title">Site &amp; design targets</div>
           <div class="field-grid">
-            <label>Plot width <span><input id="site-width" type="number" step="0.01" min="1" /> ft</span></label>
-            <label>Plot depth <span><input id="site-depth" type="number" step="0.01" min="1" /> ft</span></label>
-            <label>Wall/common area <span><input id="common-area" type="number" step="0.01" min="0" /> sq ft</span></label>
+            <label>Plot frontage <span><input id="site-width" type="text" inputmode="text" aria-label="Plot frontage in architectural feet and inches" /></span></label>
+            <label>Plot depth <span><input id="site-depth" type="text" inputmode="text" aria-label="Plot depth in architectural feet and inches" /></span></label>
+            <label>Left target <span><input id="left-target" type="text" inputmode="text" /></span></label>
+            <label>Right target <span><input id="right-target" type="text" inputmode="text" /></span></label>
+            <label>Rear minimum <span><input id="rear-min-target" type="text" inputmode="text" /></span></label>
+            <label>Rear preferred <span><input id="rear-preferred-target" type="text" inputmode="text" /></span></label>
+            <label class="locked-field">Front target <span><input id="front-target" readonly /></span></label>
+            <label class="locked-field">North <span><output id="north-status">Not established</output></span></label>
+            <label>Legacy wall/common <span><input id="common-area" type="number" step="0.01" min="0" /> sq ft</span></label>
             <label class="locked-field">Coverage rule <span><input value="66" readonly /> % 🔒</span></label>
           </div>
-          <p class="field-note">Coverage uses the union of included rooms plus wall/common area, so overlaps are not counted twice. Totals use full-precision geometry; displayed lengths are rounded.</p>
+          <p class="field-note">Side and rear values are editable design targets, not verified legal setbacks. The front remains flexible. The dashed box uses the 4-ft sides and 8-ft rear minimum; the second rear line marks 10 ft.</p>
+          <p class="field-note legacy-note">The 1,969.11 sq ft value is retained only from the rectangle prototype. Authoritative building-footprint coverage is deferred until exterior-envelope geometry exists in A4.</p>
         </section>
 
         <section class="panel-section selection-section">
@@ -188,6 +195,6 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <script src="app.js?v=20260914-5"></script>
+    <script type="module" src="app.js?v=20260914-a1"></script>
   </body>
 </html>

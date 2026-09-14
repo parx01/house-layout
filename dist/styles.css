@@ -222,6 +222,8 @@ kbd {
 
 #reference-layer { opacity: 0.28; pointer-events: none; }
 .site-boundary { fill: #fefefe; stroke: #52697c; stroke-width: 80; }
+.buildable-envelope { fill: none; stroke: #18a999; stroke-width: 55; stroke-dasharray: 240 140; pointer-events: none; }
+.preferred-rear-line { stroke: #18a999; stroke-width: 38; stroke-dasharray: 85 100; opacity: 0.72; pointer-events: none; }
 .road-label { font-size: 420px; letter-spacing: 70px; fill: #516574; font-weight: 750; text-anchor: middle; }
 .room-shape { fill: rgba(24, 169, 153, 0.10); cursor: move; }
 .room-shape:hover { fill: rgba(24, 169, 153, 0.17); }
@@ -254,6 +256,7 @@ kbd {
 .coverage-header { display: flex; justify-content: space-between; gap: 12px; align-items: flex-start; }
 .eyebrow { color: #9fb2c2; text-transform: uppercase; letter-spacing: 0.09em; font-size: 0.7rem; font-weight: 800; }
 .coverage-card h2 { font-size: 2rem; margin: 3px 0 0; letter-spacing: -0.04em; }
+.coverage-card h2 small { font-size: 0.68rem; letter-spacing: 0.02em; color: #9fb2c2; text-transform: uppercase; }
 .limit-badge { padding: 6px 8px; background: #243c52; border: 1px solid #3c5970; color: #d9e5ec; border-radius: 6px; font-size: 0.72rem; font-weight: 800; }
 .coverage-bar { position: relative; height: 9px; margin: 14px 0 11px; background: #2b4255; border-radius: 20px; overflow: visible; }
 #coverage-bar-fill { height: 100%; width: 50.5%; background: var(--teal); border-radius: inherit; transition: width 180ms ease, background 180ms ease; }
@@ -288,6 +291,8 @@ kbd {
   text-align: right;
 }
 .locked-field input { background: #f0f4f6; color: #526373; }
+#north-status { max-width: 112px; text-align: right; color: #526373; font-size: 0.74rem; line-height: 1.25; }
+.legacy-note { border-left: 3px solid #f4b942; padding-left: 9px; }
 
 .empty-selection { margin-top: 12px; border: 1px dashed #cbd7df; border-radius: 8px; padding: 14px; color: var(--muted); font-size: 0.8rem; line-height: 1.5; }
 #selection-form { margin-top: 12px; display: grid; gap: 10px; }
