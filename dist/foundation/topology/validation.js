@@ -72,10 +72,80 @@ export function validateTopologyV2(value, path = "project.topology") {
         }
         occupiedCoordinates.set(coordinateKey, node.id);
     }
+    validateCanonicalRelationships(nodes, walls);
     if (topology.status === "empty" && (Object.keys(nodes).length !== 0 || Object.keys(walls).length !== 0)) {
         fail(`${path} with status "empty" must not contain nodes or walls.`);
     }
     return { status: topology.status, modelVersion: 1, nodes, walls };
+}
+function validateCanonicalRelationships(nodes, walls) {
+    const wallValues = Object.values(walls);
+    for (let leftIndex = 0; leftIndex < wallValues.length; leftIndex += 1) {
+        const left = wallValues[leftIndex];
+        const leftStart = nodes[left.startNodeId];
+        const leftEnd = nodes[left.endNodeId];
+        const leftHorizontal = leftStart.yUm === leftEnd.yUm;
+        for (let rightIndex = leftIndex + 1; rightIndex < wallValues.length; rightIndex += 1) {
+            const right = wallValues[rightIndex];
+            const rightStart = nodes[right.startNodeId];
+            const rightEnd = nodes[right.endNodeId];
+            const rightHorizontal = rightStart.yUm === rightEnd.yUm;
+            if (leftHorizontal === rightHorizontal) {
+                const sameLine = leftHorizontal ? leftStart.yUm === rightStart.yUm : leftStart.xUm === rightStart.xUm;
+                if (!sameLine)
+                    continue;
+                const leftRange = leftHorizontal
+                    ? orderedRange(leftStart.xUm, leftEnd.xUm)
+                    : orderedRange(leftStart.yUm, leftEnd.yUm);
+                const rightRange = rightHorizontal
+                    ? orderedRange(rightStart.xUm, rightEnd.xUm)
+                    : orderedRange(rightStart.yUm, rightEnd.yUm);
+                if (Math.max(leftRange.min, rightRange.min) < Math.min(leftRange.max, rightRange.max)) {
+                    fail(`Topology walls ${left.id} and ${right.id} overlap collinearly.`);
+                }
+                continue;
+            }
+            const horizontalStart = leftHorizontal ? leftStart : rightStart;
+            const horizontalEnd = leftHorizontal ? leftEnd : rightEnd;
+            const verticalStart = leftHorizontal ? rightStart : leftStart;
+            const verticalEnd = leftHorizontal ? rightEnd : leftEnd;
+            const intersects = between(verticalStart.xUm, horizontalStart.xUm, horizontalEnd.xUm) &&
+                between(horizontalStart.yUm, verticalStart.yUm, verticalEnd.yUm);
+            if (!intersects)
+                continue;
+            const horizontalInterior = strictlyBetween(verticalStart.xUm, horizontalStart.xUm, horizontalEnd.xUm);
+            const verticalInterior = strictlyBetween(horizontalStart.yUm, verticalStart.yUm, verticalEnd.yUm);
+            if (horizontalInterior || verticalInterior) {
+                fail(`Topology walls ${left.id} and ${right.id} intersect without canonical splitting.`);
+            }
+        }
+    }
+    for (const node of Object.values(nodes)) {
+        for (const wall of wallValues) {
+            if (wall.startNodeId === node.id || wall.endNodeId === node.id)
+                continue;
+            const start = nodes[wall.startNodeId];
+            const end = nodes[wall.endNodeId];
+            if (pointStrictlyInsideSegment(node, start, end)) {
+                fail(`Topology node ${node.id} lies on the unsplit interior of wall ${wall.id}.`);
+            }
+        }
+    }
+}
+function pointStrictlyInsideSegment(point, start, end) {
+    if (start.xUm === end.xUm) {
+        return point.xUm === start.xUm && strictlyBetween(point.yUm, start.yUm, end.yUm);
+    }
+    return point.yUm === start.yUm && strictlyBetween(point.xUm, start.xUm, end.xUm);
+}
+function orderedRange(a, b) {
+    return { min: Math.min(a, b), max: Math.max(a, b) };
+}
+function between(value, a, b) {
+    return value >= Math.min(a, b) && value <= Math.max(a, b);
+}
+function strictlyBetween(value, a, b) {
+    return value > Math.min(a, b) && value < Math.max(a, b);
 }
 function validateNode(value, path) {
     const node = record(value, path);
