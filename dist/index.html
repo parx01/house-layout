@@ -1,0 +1,193 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta
+      name="description"
+      content="A local visual editor for adjusting the OPTION-3 house plan with a fixed 66 percent coverage limit."
+    />
+    <title>Plan 66 - House Plan Editor</title>
+    <link
+      rel="icon"
+      type="image/svg+xml"
+      href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230d1b2a'/%3E%3Cpath d='M14 48V17h36v31M14 31h36M29 17v31' fill='none' stroke='%23f4b942' stroke-width='5'/%3E%3C/svg%3E"
+    />
+    <link rel="stylesheet" href="styles.css?v=20260914-3" />
+  </head>
+  <body>
+    <header class="app-header">
+      <div class="brand" aria-label="Plan 66 house plan editor">
+        <span class="brand-mark" aria-hidden="true"></span>
+        <div>
+          <strong>Plan 66</strong>
+          <span>OPTION-3 ground floor</span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <span class="save-status" id="save-status" role="status">Saved locally</span>
+        <button class="button button-secondary" id="export-svg">Export SVG</button>
+        <button class="button button-primary" id="export-json">Save project</button>
+      </div>
+    </header>
+
+    <main class="workspace">
+      <aside class="tool-panel" aria-label="Drawing tools">
+        <div class="panel-heading">
+          <span>Tools</span>
+          <kbd>Shortcuts</kbd>
+        </div>
+
+        <div class="tool-grid" role="toolbar" aria-label="Plan editing tools">
+          <button class="tool active" data-tool="select" aria-pressed="true">
+            <span class="tool-icon">↖</span><span>Select</span><kbd>V</kbd>
+          </button>
+          <button class="tool" data-tool="room" aria-pressed="false">
+            <span class="tool-icon">▭</span><span>Add room</span><kbd>R</kbd>
+          </button>
+          <button class="tool" data-tool="wall" aria-pressed="false">
+            <span class="tool-icon">╱</span><span>Add wall</span><kbd>W</kbd>
+          </button>
+          <button class="tool" id="delete-selection">
+            <span class="tool-icon">⌫</span><span>Delete selected</span><kbd>Del</kbd>
+          </button>
+        </div>
+
+        <div class="tool-row">
+          <button class="icon-button" id="undo" aria-label="Undo" title="Undo (Ctrl+Z)">↶</button>
+          <button class="icon-button" id="redo" aria-label="Redo" title="Redo (Ctrl+Y)">↷</button>
+          <button class="text-button" id="reset-plan">Reset plan</button>
+        </div>
+
+        <section class="panel-section">
+          <div class="section-title">View</div>
+          <label class="switch-row">
+            <span>Original plan</span>
+            <input id="show-reference" type="checkbox" checked />
+          </label>
+          <label class="range-row">
+            <span>Reference opacity</span>
+            <output id="opacity-output">28%</output>
+            <input id="reference-opacity" type="range" min="0" max="70" value="28" />
+          </label>
+          <label class="switch-row">
+            <span>Grid and snapping</span>
+            <input id="snap-grid" type="checkbox" checked />
+          </label>
+          <label class="switch-row">
+            <span>Room names</span>
+            <input id="show-labels" type="checkbox" checked />
+          </label>
+        </section>
+
+        <section class="panel-section help-card">
+          <div class="section-title">Quick use</div>
+          <p>Click a wall to select it, then drag its handles. Walls are removed only with Delete selected or the Delete key.</p>
+        </section>
+      </aside>
+
+      <section class="drawing-shell" aria-label="House plan drawing area">
+        <div class="canvas-toolbar">
+          <div>
+            <strong id="canvas-title">Select and adjust</strong>
+            <span id="canvas-hint">Click a wall, then drag its visible handles</span>
+          </div>
+          <div class="canvas-controls">
+            <button class="icon-button" id="zoom-out" aria-label="Zoom out">−</button>
+            <output id="zoom-output">100%</output>
+            <button class="icon-button" id="zoom-in" aria-label="Zoom in">+</button>
+            <button class="text-button" id="fit-plan">Fit</button>
+          </div>
+        </div>
+
+        <div class="canvas-viewport" id="canvas-viewport">
+          <svg
+            id="plan-svg"
+            viewBox="-900 -900 16800 25950"
+            role="img"
+            aria-label="Interactive OPTION-3 house plan"
+            tabindex="0"
+          >
+            <defs>
+              <pattern id="small-grid" width="76.2" height="76.2" patternUnits="userSpaceOnUse">
+                <path d="M 76.2 0 L 0 0 0 76.2" fill="none" stroke="#dbe3ea" stroke-width="12" />
+              </pattern>
+              <pattern id="grid" width="304.8" height="304.8" patternUnits="userSpaceOnUse">
+                <rect width="304.8" height="304.8" fill="url(#small-grid)" />
+                <path d="M 304.8 0 L 0 0 0 304.8" fill="none" stroke="#bdcbd6" stroke-width="24" />
+              </pattern>
+              <filter id="selection-glow" x="-30%" y="-30%" width="160%" height="160%">
+                <feDropShadow dx="0" dy="0" stdDeviation="90" flood-color="#f4b942" flood-opacity="0.7" />
+              </filter>
+            </defs>
+            <rect id="grid-layer" x="0" y="0" width="15000" height="24150" fill="url(#grid)" />
+            <g id="reference-layer">
+              <image
+                href="assets/option-3-reference.png"
+                x="0"
+                y="0"
+                width="15000"
+                height="24144.62"
+                preserveAspectRatio="none"
+              />
+            </g>
+            <g id="site-layer"></g>
+            <g id="room-layer"></g>
+            <g id="wall-layer"></g>
+            <g id="interaction-layer"></g>
+          </svg>
+
+          <div class="scale-note">Dimensions in feet · snapping 0.25 ft</div>
+        </div>
+      </section>
+
+      <aside class="inspector" aria-label="Plan information and selected object">
+        <section class="coverage-card" aria-labelledby="coverage-heading">
+          <div class="coverage-header">
+            <div>
+              <span class="eyebrow">Site coverage</span>
+              <h2 id="coverage-heading"><span id="coverage-percent">50.50</span>%</h2>
+            </div>
+            <div class="limit-badge">Limit 66%</div>
+          </div>
+          <div class="coverage-bar" aria-hidden="true">
+            <div id="coverage-bar-fill"></div>
+            <span class="limit-marker"></span>
+          </div>
+          <div class="coverage-status" id="coverage-status">
+            <span class="status-dot"></span>
+            <strong>Within limit</strong>
+          </div>
+          <dl class="metric-list">
+            <div><dt>Plot area</dt><dd id="plot-area">3899.23 sq ft</dd></div>
+            <div><dt>66% maximum</dt><dd id="max-covered">2573.49 sq ft</dd></div>
+            <div><dt>Total covered area</dt><dd id="designed-coverage">1969.11 sq ft</dd></div>
+            <div><dt>Remaining allowance</dt><dd id="remaining-area">604.38 sq ft</dd></div>
+          </dl>
+        </section>
+
+        <section class="panel-section inputs-section">
+          <div class="section-title">Coverage inputs</div>
+          <div class="field-grid">
+            <label>Plot width <span><input id="site-width" type="number" step="0.01" min="1" /> ft</span></label>
+            <label>Plot depth <span><input id="site-depth" type="number" step="0.01" min="1" /> ft</span></label>
+            <label>Wall/common area <span><input id="common-area" type="number" step="0.01" min="0" /> sq ft</span></label>
+            <label class="locked-field">Coverage rule <span><input value="66" readonly /> % 🔒</span></label>
+          </div>
+          <p class="field-note">Coverage uses the union of included rooms plus wall/common area, so overlaps are not counted twice. Totals use full-precision geometry; displayed lengths are rounded.</p>
+        </section>
+
+        <section class="panel-section selection-section">
+          <div class="section-title">Selection</div>
+          <div id="empty-selection" class="empty-selection">Select a room or wall to edit its dimensions.</div>
+          <form id="selection-form" hidden></form>
+        </section>
+      </aside>
+    </main>
+
+    <div id="toast" class="toast" role="status" aria-live="polite"></div>
+
+    <script src="app.js?v=20260914-5"></script>
+  </body>
+</html>
