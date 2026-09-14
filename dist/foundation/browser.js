@@ -6,4 +6,5 @@ export * from "./project/option3-baseline.js";
 export * from "./project/schema.js";
 export * from "./project/validation.js";
 export * from "./ui/legacy-adapter.js";
+export * from "./ui/reference-calibration.js";
 //# sourceMappingURL=browser.js.map

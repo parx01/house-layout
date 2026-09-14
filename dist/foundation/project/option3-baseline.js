@@ -27,6 +27,7 @@ export const OPTION_3_V1_RECOVERY_STATE = {
 export function createOption3ProjectV2(legacyState = OPTION_3_V1_RECOVERY_STATE) {
     return {
         schemaVersion: 2,
+        schemaRevision: 2,
         projectId: "option-3",
         name: "OPTION-3 ground floor",
         units: "um",
@@ -42,6 +43,11 @@ export function createOption3ProjectV2(legacyState = OPTION_3_V1_RECOVERY_STATE)
             status: "deferredToTopologyA2",
             coverageStatus: "deferredToExteriorEnvelopeA4",
         },
+        topology: deferredModel("A2"),
+        spaces: deferredModel("A2"),
+        openings: deferredModel("postA2"),
+        dimensions: deferredModel("A2"),
+        siteObjects: deferredModel("postA2"),
         legacyEditorState: structuredClone(legacyState),
         recovery: {
             fixture: "fixtures/option-3-v1.json",
@@ -49,5 +55,8 @@ export function createOption3ProjectV2(legacyState = OPTION_3_V1_RECOVERY_STATE)
             referenceImageSha256: OPTION_3_REFERENCE_SHA256,
         },
     };
+}
+function deferredModel(targetStage) {
+    return { status: "deferred", targetStage, modelVersion: null, data: null };
 }
 //# sourceMappingURL=option3-baseline.js.map

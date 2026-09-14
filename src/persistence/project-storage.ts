@@ -3,6 +3,7 @@ import { createOption3ProjectV2 } from "../project/option3-baseline.js";
 import type { LegacyEditorStateV1, ProjectV2 } from "../project/schema.js";
 import {
   detectProjectVersion,
+  normalizeProjectV2,
   ProjectValidationError,
   UnsupportedProjectVersionError,
   validateLegacyProjectEnvelopeV1,
@@ -24,7 +25,7 @@ export function parseProjectJson(json: string): ProjectV2 {
 
 export function loadProjectValue(value: unknown): ProjectV2 {
   const version = detectProjectVersion(value);
-  if (version === 2) return validateProjectV2(value);
+  if (version === 2) return normalizeProjectV2(value);
   const legacy = validateLegacyProjectEnvelopeV1(value);
   return createOption3ProjectV2(legacy);
 }

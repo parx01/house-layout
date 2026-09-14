@@ -1,5 +1,6 @@
 import {
   areaToSquareFeet,
+  calculateOption3CanvasViewBox,
   createOption3ProjectV2,
   decimalFeetToLength,
   formatArchitecturalLength,
@@ -7,6 +8,8 @@ import {
   foundationSummary,
   legacyMmToUm,
   lengthUmToLegacyMm,
+  OPTION_3_REFERENCE_DEPTH_UM,
+  OPTION_3_REFERENCE_WIDTH_UM,
   parseArchitecturalLength,
   projectToLegacyEditorState,
   readProjectFromStorage,
@@ -229,7 +232,7 @@ function renderSite() {
   });
   road.textContent = project.site.road.widthUm === null
     ? "ROAD · FRONT EDGE"
-    : `ROAD · ${formatArchitecturalLength(project.site.road.widthUm)} WIDE`;
+    : `ROAD · ${formatArchitecturalLength(project.site.road.widthUm)} WIDE · PLAN NOTE`;
   siteLayer.append(road);
 }
 
@@ -471,8 +474,19 @@ function render() {
   document.querySelector("#grid-layer").style.display = state.snap ? "block" : "none";
   document.querySelector("#grid-layer").setAttribute("width", String(state.site.width));
   document.querySelector("#grid-layer").setAttribute("height", String(state.site.depth));
-  document.querySelector("#reference-layer image").setAttribute("width", String(state.site.width));
-  document.querySelector("#reference-layer image").setAttribute("height", String(state.site.depth));
+  const referenceImage = document.querySelector("#reference-layer image");
+  referenceImage.setAttribute("width", String(lengthUmToLegacyMm(OPTION_3_REFERENCE_WIDTH_UM)));
+  referenceImage.setAttribute("height", String(lengthUmToLegacyMm(OPTION_3_REFERENCE_DEPTH_UM)));
+  const viewBox = calculateOption3CanvasViewBox(
+    project.site.boundary.widthUm,
+    project.site.boundary.depthUm,
+  );
+  svg.setAttribute("viewBox", [
+    lengthUmToLegacyMm(viewBox.xUm),
+    lengthUmToLegacyMm(viewBox.yUm),
+    lengthUmToLegacyMm(viewBox.widthUm),
+    lengthUmToLegacyMm(viewBox.depthUm),
+  ].join(" "));
   document.querySelector("#site-width").value = formatArchitecturalLength(project.site.boundary.widthUm);
   document.querySelector("#site-depth").value = formatArchitecturalLength(project.site.boundary.depthUm);
   document.querySelector("#common-area").value = (state.commonAreaMm2 / FT2_TO_MM2).toFixed(2);
@@ -757,17 +771,25 @@ document.querySelector("#common-area").addEventListener("change", (event) => {
 });
 
 function setZoom(next) {
-  zoom = Math.min(2.5, Math.max(0.65, next));
-  const centerX = state.site.width / 2;
-  const centerY = state.site.depth / 2;
-  const width = 16800 / zoom;
-  const height = 25950 / zoom;
-  svg.setAttribute("viewBox", `${centerX - width / 2} ${centerY - height / 2} ${width} ${height}`);
+  const viewport = document.querySelector("#canvas-viewport");
+  const horizontalCenter = (viewport.scrollLeft + viewport.clientWidth / 2) / Math.max(1, viewport.scrollWidth);
+  const verticalCenter = (viewport.scrollTop + viewport.clientHeight / 2) / Math.max(1, viewport.scrollHeight);
+  zoom = Math.min(2.5, Math.max(1, next));
+  svg.style.width = `${zoom * 100}%`;
+  svg.style.height = `${zoom * 100}%`;
   document.querySelector("#zoom-output").textContent = `${Math.round(zoom * 100)}%`;
+  window.requestAnimationFrame(() => {
+    viewport.scrollLeft = horizontalCenter * viewport.scrollWidth - viewport.clientWidth / 2;
+    viewport.scrollTop = verticalCenter * viewport.scrollHeight - viewport.clientHeight / 2;
+  });
 }
 document.querySelector("#zoom-in").addEventListener("click", () => setZoom(zoom + 0.15));
 document.querySelector("#zoom-out").addEventListener("click", () => setZoom(zoom - 0.15));
-document.querySelector("#fit-plan").addEventListener("click", () => { zoom = 1; svg.setAttribute("viewBox", "-900 -900 16800 25950"); document.querySelector("#zoom-output").textContent = "100%"; });
+document.querySelector("#fit-plan").addEventListener("click", () => {
+  setZoom(1);
+  const viewport = document.querySelector("#canvas-viewport");
+  viewport.scrollTo({ left: 0, top: 0 });
+});
 
 document.querySelector("#reset-plan").addEventListener("click", () => {
   if (!window.confirm("Reset all rooms, walls, and coverage inputs to the OPTION-3 starting plan?")) return;

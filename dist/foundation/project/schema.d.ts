@@ -40,8 +40,21 @@ export interface CoordinateSystemV2 {
     readonly edgeIndexing: "clockwiseFromRear";
     readonly geometryRotationPositive: "clockwiseInSvgView";
 }
+export type DeferredModelTargetStage = "A2" | "postA2";
+/**
+ * Stable ProjectV2 envelope for a future versioned geometry model. A2 may
+ * activate a slot with a separately validated modelVersion/data payload, but
+ * must not add or reinterpret ProjectV2 top-level keys.
+ */
+export interface DeferredModelSlotV2 {
+    readonly status: "deferred";
+    readonly targetStage: DeferredModelTargetStage;
+    readonly modelVersion: null;
+    readonly data: null;
+}
 export interface ProjectV2 {
     readonly schemaVersion: 2;
+    readonly schemaRevision: 2;
     readonly projectId: "option-3";
     readonly name: string;
     readonly units: "um";
@@ -51,6 +64,11 @@ export interface ProjectV2 {
         readonly status: "deferredToTopologyA2";
         readonly coverageStatus: "deferredToExteriorEnvelopeA4";
     };
+    readonly topology: DeferredModelSlotV2;
+    readonly spaces: DeferredModelSlotV2;
+    readonly openings: DeferredModelSlotV2;
+    readonly dimensions: DeferredModelSlotV2;
+    readonly siteObjects: DeferredModelSlotV2;
     legacyEditorState: LegacyEditorStateV1;
     readonly recovery: {
         readonly fixture: "fixtures/option-3-v1.json";

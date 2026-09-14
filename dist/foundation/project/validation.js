@@ -131,8 +131,25 @@ function validateLegacyWall(value, path) {
 }
 export function validateProjectV2(value) {
     const root = record(value, "project");
-    exactKeys(root, ["schemaVersion", "projectId", "name", "units", "coordinateSystem", "site", "building", "legacyEditorState", "recovery"], [], "project");
+    exactKeys(root, [
+        "schemaVersion",
+        "schemaRevision",
+        "projectId",
+        "name",
+        "units",
+        "coordinateSystem",
+        "site",
+        "building",
+        "topology",
+        "spaces",
+        "openings",
+        "dimensions",
+        "siteObjects",
+        "legacyEditorState",
+        "recovery",
+    ], [], "project");
     literal(root.schemaVersion, 2, "project.schemaVersion");
+    literal(root.schemaRevision, 2, "project.schemaRevision");
     literal(root.projectId, "option-3", "project.projectId");
     const name = stringValue(root.name, "project.name");
     literal(root.units, "um", "project.units");
@@ -148,6 +165,11 @@ export function validateProjectV2(value) {
     exactKeys(building, ["status", "coverageStatus"], [], "project.building");
     literal(building.status, "deferredToTopologyA2", "project.building.status");
     literal(building.coverageStatus, "deferredToExteriorEnvelopeA4", "project.building.coverageStatus");
+    const topology = validateDeferredModel(root.topology, "project.topology", "A2");
+    const spaces = validateDeferredModel(root.spaces, "project.spaces", "A2");
+    const openings = validateDeferredModel(root.openings, "project.openings", "postA2");
+    const dimensions = validateDeferredModel(root.dimensions, "project.dimensions", "A2");
+    const siteObjects = validateDeferredModel(root.siteObjects, "project.siteObjects", "postA2");
     const recovery = record(root.recovery, "project.recovery");
     exactKeys(recovery, ["fixture", "referenceImage", "referenceImageSha256"], [], "project.recovery");
     literal(recovery.fixture, "fixtures/option-3-v1.json", "project.recovery.fixture");
@@ -157,6 +179,7 @@ export function validateProjectV2(value) {
         fail("project.recovery.referenceImageSha256 must be a lowercase SHA-256 value.");
     return {
         schemaVersion: 2,
+        schemaRevision: 2,
         projectId: "option-3",
         name,
         units: "um",
@@ -169,6 +192,11 @@ export function validateProjectV2(value) {
         },
         site,
         building: { status: "deferredToTopologyA2", coverageStatus: "deferredToExteriorEnvelopeA4" },
+        topology,
+        spaces,
+        openings,
+        dimensions,
+        siteObjects,
         legacyEditorState: validateLegacyEditorStateV1(root.legacyEditorState, "project.legacyEditorState"),
         recovery: {
             fixture: "fixtures/option-3-v1.json",
@@ -176,6 +204,17 @@ export function validateProjectV2(value) {
             referenceImageSha256,
         },
     };
+}
+function validateDeferredModel(value, path, targetStage) {
+    const model = record(value, path);
+    exactKeys(model, ["status", "targetStage", "modelVersion", "data"], [], path);
+    literal(model.status, "deferred", `${path}.status`);
+    literal(model.targetStage, targetStage, `${path}.targetStage`);
+    if (model.modelVersion !== null)
+        fail(`${path}.modelVersion must be null while deferred.`);
+    if (model.data !== null)
+        fail(`${path}.data must be null while deferred.`);
+    return { status: "deferred", targetStage, modelVersion: null, data: null };
 }
 function validateSiteV2(value) {
     const site = record(value, "project.site");
@@ -187,7 +226,18 @@ function validateSiteV2(value) {
     const depthUm = lengthUm(safeInteger(boundary.depthUm, "project.site.boundary.depthUm", 1));
     areaUm2(widthUm * depthUm, "project.site.boundary area");
     const road = record(site.road, "project.site.road");
-    exactKeys(road, ["edgeIndex", "label", "widthUm"], [], "project.site.road");
+    exactKeys(road, ["edgeIndex", "label", "widthUm", "widthProvenance"], [], "project.site.road");
+    const roadWidthUm = nullableSafeLength(road.widthUm, "project.site.road.widthUm");
+    const roadWidthProvenance = validateRoadWidthProvenance(road.widthProvenance);
+    if (roadWidthUm === null && roadWidthProvenance !== null) {
+        fail("project.site.road.widthProvenance must be null when widthUm is null.");
+    }
+    if (roadWidthUm !== null && roadWidthProvenance === null) {
+        fail("project.site.road.widthProvenance is required when widthUm is present.");
+    }
+    if (roadWidthProvenance?.kind === "referencePlanSuppliedUnverified" && roadWidthUm !== 12_000_000) {
+        fail("project.site.road.widthUm must equal the 12,000,000 um value stated by OPTION-3.pdf.");
+    }
     const orientation = record(site.orientation, "project.site.orientation");
     exactKeys(orientation, ["northAngleDeg", "angleReference", "positiveDirection"], [], "project.site.orientation");
     if (orientation.northAngleDeg !== null) {
@@ -224,7 +274,8 @@ function validateSiteV2(value) {
         road: {
             edgeIndex: edgeIndex(road.edgeIndex, "project.site.road.edgeIndex"),
             label: stringValue(road.label, "project.site.road.label"),
-            widthUm: nullableSafeLength(road.widthUm, "project.site.road.widthUm"),
+            widthUm: roadWidthUm,
+            widthProvenance: roadWidthProvenance,
         },
         orientation: {
             northAngleDeg: orientation.northAngleDeg,
@@ -241,6 +292,74 @@ function validateSiteV2(value) {
             frontMinUm,
         },
     };
+}
+function validateRoadWidthProvenance(value) {
+    if (value === null)
+        return null;
+    const provenance = record(value, "project.site.road.widthProvenance");
+    exactKeys(provenance, ["kind", "sourceDocument", "sourceLabel"], [], "project.site.road.widthProvenance");
+    if (provenance.kind === "referencePlanSuppliedUnverified") {
+        literal(provenance.sourceDocument, "OPTION-3.pdf", "project.site.road.widthProvenance.sourceDocument");
+        literal(provenance.sourceLabel, "ROAD 12.00M WIDE", "project.site.road.widthProvenance.sourceLabel");
+        return {
+            kind: "referencePlanSuppliedUnverified",
+            sourceDocument: "OPTION-3.pdf",
+            sourceLabel: "ROAD 12.00M WIDE",
+        };
+    }
+    literal(provenance.kind, "legacyProjectUnverified", "project.site.road.widthProvenance.kind");
+    if (provenance.sourceDocument !== null)
+        fail("project.site.road.widthProvenance.sourceDocument must be null.");
+    if (provenance.sourceLabel !== null)
+        fail("project.site.road.widthProvenance.sourceLabel must be null.");
+    return { kind: "legacyProjectUnverified", sourceDocument: null, sourceLabel: null };
+}
+/**
+ * ProjectV2 A1 files predate schemaRevision and the reserved model slots. This
+ * explicit one-way normalization keeps those saves recoverable without treating
+ * the legacy room rectangles as topology.
+ */
+export function normalizeProjectV2(value) {
+    const root = record(value, "project");
+    literal(root.schemaVersion, 2, "project.schemaVersion");
+    if (root.schemaRevision === 2)
+        return validateProjectV2(value);
+    if (root.schemaRevision !== undefined) {
+        fail(`project.schemaRevision ${String(root.schemaRevision)} is not supported for schemaVersion 2.`);
+    }
+    return migrateProjectV2A1ToRevision2(root);
+}
+export function migrateProjectV2A1ToRevision2(value) {
+    const root = record(value, "project");
+    exactKeys(root, ["schemaVersion", "projectId", "name", "units", "coordinateSystem", "site", "building", "legacyEditorState", "recovery"], [], "project");
+    literal(root.schemaVersion, 2, "project.schemaVersion");
+    const site = record(root.site, "project.site");
+    const road = record(site.road, "project.site.road");
+    exactKeys(road, ["edgeIndex", "label", "widthUm"], [], "project.site.road");
+    const migrated = structuredClone(root);
+    const migratedSite = record(migrated.site, "project.site");
+    const migratedRoad = record(migratedSite.road, "project.site.road");
+    const widthUm = migratedRoad.widthUm;
+    migratedRoad.widthProvenance =
+        widthUm === null
+            ? null
+            : widthUm === 12_000_000
+                ? {
+                    kind: "referencePlanSuppliedUnverified",
+                    sourceDocument: "OPTION-3.pdf",
+                    sourceLabel: "ROAD 12.00M WIDE",
+                }
+                : { kind: "legacyProjectUnverified", sourceDocument: null, sourceLabel: null };
+    migrated.schemaRevision = 2;
+    migrated.topology = deferredModel("A2");
+    migrated.spaces = deferredModel("A2");
+    migrated.openings = deferredModel("postA2");
+    migrated.dimensions = deferredModel("A2");
+    migrated.siteObjects = deferredModel("postA2");
+    return validateProjectV2(migrated);
+}
+function deferredModel(targetStage) {
+    return { status: "deferred", targetStage, modelVersion: null, data: null };
 }
 export function detectProjectVersion(value) {
     const root = record(value, "project");

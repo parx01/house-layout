@@ -21,7 +21,7 @@ Open `http://127.0.0.1:8765/`. Keep the entire `dist` folder together because th
 - Enter room and site lengths as architectural measurements such as `10'6"` or `49'2"`.
 - Undo or redo with the buttons or keyboard shortcuts.
 
-The browser saves a strictly validated ProjectV2 document locally. **Save project** downloads the same V2 format. A corrupt project or an unsupported schema version is rejected explicitly; it is never shallow-merged into defaults.
+The browser saves a strictly validated ProjectV2 document locally. **Save project** downloads the same V2 format. A corrupt project or an unsupported schema version is rejected explicitly; it is never shallow-merged into defaults. A1-era ProjectV2 saves are recovered by an explicit schema-revision migration before validation.
 
 ## Exact site and supplied coverage limit
 
@@ -31,6 +31,8 @@ The browser saves a strictly validated ProjectV2 document locally. **Save projec
 - Supplied 66% maximum: **2,568.9583 sq ft**
 
 The 66% figure is recorded as user-supplied and unverified. The editable 4-ft side, 8-ft minimum rear, and 10-ft preferred rear values are design targets, not statutory setbacks. The front target remains flexible and north remains unknown until authoritative information is available.
+
+The drawing itself labels the front road as 12.00 m wide, so ProjectV2 retains 12,000,000 µm with `referencePlanSuppliedUnverified` provenance. This is plan metadata, not independent confirmation. The tracing image remains calibrated to the original Option-3 property when experimental site dimensions are edited; the site boundary, grid, target envelope, and drawing frame follow the edited dimensions.
 
 The visible **1,969.11 sq ft** covered-area number is explicitly a legacy rectangle-prototype estimate. ProjectV2 does not treat it as an authoritative building footprint. Exterior-envelope coverage is deferred to A4.
 

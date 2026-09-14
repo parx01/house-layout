@@ -14,6 +14,11 @@ export function createOption3Site() {
             edgeIndex: 2,
             label: "Road",
             widthUm: lengthUm(12_000_000),
+            widthProvenance: {
+                kind: "referencePlanSuppliedUnverified",
+                sourceDocument: "OPTION-3.pdf",
+                sourceLabel: "ROAD 12.00M WIDE",
+            },
         },
         orientation: {
             northAngleDeg: null,

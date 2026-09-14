@@ -16,6 +16,12 @@ describe("Option 3 site calculations", () => {
     expect(site.boundary.depthUm).toBe(24_130_000);
     expect(site.frontEdgeIndex).toBe(2);
     expect(site.orientation.northAngleDeg).toBeNull();
+    expect(site.road.widthUm).toBe(12_000_000);
+    expect(site.road.widthProvenance).toEqual({
+      kind: "referencePlanSuppliedUnverified",
+      sourceDocument: "OPTION-3.pdf",
+      sourceLabel: "ROAD 12.00M WIDE",
+    });
   });
 
   it("calculates the exact plot area", () => {

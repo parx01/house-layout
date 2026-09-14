@@ -32,6 +32,18 @@ export interface SiteV2 {
     readonly edgeIndex: 0 | 1 | 2 | 3;
     readonly label: string;
     readonly widthUm: LengthUm | null;
+    readonly widthProvenance:
+      | {
+          readonly kind: "referencePlanSuppliedUnverified";
+          readonly sourceDocument: "OPTION-3.pdf";
+          readonly sourceLabel: "ROAD 12.00M WIDE";
+        }
+      | {
+          readonly kind: "legacyProjectUnverified";
+          readonly sourceDocument: null;
+          readonly sourceLabel: null;
+        }
+      | null;
   };
   readonly orientation: {
     readonly northAngleDeg: number | null;
@@ -68,6 +80,11 @@ export function createOption3Site(): SiteV2 {
       edgeIndex: 2,
       label: "Road",
       widthUm: lengthUm(12_000_000),
+      widthProvenance: {
+        kind: "referencePlanSuppliedUnverified",
+        sourceDocument: "OPTION-3.pdf",
+        sourceLabel: "ROAD 12.00M WIDE",
+      },
     },
     orientation: {
       northAngleDeg: null,

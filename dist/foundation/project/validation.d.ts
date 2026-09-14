@@ -8,6 +8,13 @@ export declare class UnsupportedProjectVersionError extends Error {
 }
 export declare function validateLegacyEditorStateV1(value: unknown, path?: string): LegacyEditorStateV1;
 export declare function validateProjectV2(value: unknown): ProjectV2;
+/**
+ * ProjectV2 A1 files predate schemaRevision and the reserved model slots. This
+ * explicit one-way normalization keeps those saves recoverable without treating
+ * the legacy room rectangles as topology.
+ */
+export declare function normalizeProjectV2(value: unknown): ProjectV2;
+export declare function migrateProjectV2A1ToRevision2(value: unknown): ProjectV2;
 export declare function detectProjectVersion(value: unknown): 1 | 2;
 export declare function validateLegacyProjectEnvelopeV1(value: unknown): LegacyProjectEnvelopeV1;
 //# sourceMappingURL=validation.d.ts.map

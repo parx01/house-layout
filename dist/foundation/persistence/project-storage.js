@@ -1,6 +1,6 @@
 import { legacyMmToUm, umToLegacyMm } from "../core/units.js";
 import { createOption3ProjectV2 } from "../project/option3-baseline.js";
-import { detectProjectVersion, ProjectValidationError, UnsupportedProjectVersionError, validateLegacyProjectEnvelopeV1, validateProjectV2, } from "../project/validation.js";
+import { detectProjectVersion, normalizeProjectV2, ProjectValidationError, UnsupportedProjectVersionError, validateLegacyProjectEnvelopeV1, validateProjectV2, } from "../project/validation.js";
 export const PROJECT_V2_STORAGE_KEY = "plan66-option3-v2";
 export const LEGACY_V1_STORAGE_KEY = "plan66-option3-v1";
 export function parseProjectJson(json) {
@@ -16,7 +16,7 @@ export function parseProjectJson(json) {
 export function loadProjectValue(value) {
     const version = detectProjectVersion(value);
     if (version === 2)
-        return validateProjectV2(value);
+        return normalizeProjectV2(value);
     const legacy = validateLegacyProjectEnvelopeV1(value);
     return createOption3ProjectV2(legacy);
 }
