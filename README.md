@@ -40,6 +40,7 @@ The visible **1,969.11 sq ft** covered-area number is explicitly a legacy rectan
 
 - `src/core`: branded integer unit helpers, geometry primitives, site calculations, design envelopes, and warning categories.
 - `src/project`: ProjectV2 types, strict validation, and the Option-3 baseline.
+- `src/topology`: A2.1 canonical node/wall graph, derived inspection helpers, and structural validation.
 - `src/persistence`: schema detection, V1 recovery wrapping, ProjectV2 serialization, and browser storage.
 - `src/ui`: the adapter that keeps the existing rectangle editor inspectable.
 - `fixtures`: immutable original V1 state and reference-image identity.
@@ -54,7 +55,9 @@ npm test
 npm run build
 ```
 
-`npm run build` compiles the TypeScript foundation to `dist/foundation`. The existing SVG renderer remains a transitional legacy UI adapter until A2 supplies the curated topology model.
+`npm run build` compiles the TypeScript foundation to `dist/foundation`. The existing SVG renderer remains a transitional legacy UI adapter until a later A2 stage supplies the curated Option-3 topology.
+
+A2.1 establishes only the internal serialized topology graph. The current Option-3 rectangles are not converted or rendered as topology yet; see `docs/topology-a2-1.md` for the centre-line convention and validation boundary.
 
 ## Construction note
 

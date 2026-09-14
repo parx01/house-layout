@@ -1,5 +1,6 @@
 import { areaUm2, lengthUm } from "../core/units.js";
 import type { SiteV2 } from "../core/site.js";
+import { validateTopologyV2 } from "../topology/validation.js";
 import type {
   DeferredModelSlotV2,
   LegacyEditorStateV1,
@@ -183,7 +184,7 @@ export function validateProjectV2(value: unknown): ProjectV2 {
   literal(building.status, "deferredToTopologyA2", "project.building.status");
   literal(building.coverageStatus, "deferredToExteriorEnvelopeA4", "project.building.coverageStatus");
 
-  const topology = validateDeferredModel(root.topology, "project.topology", "A2");
+  const topology = validateProjectTopology(root.topology);
   const spaces = validateDeferredModel(root.spaces, "project.spaces", "A2");
   const openings = validateDeferredModel(root.openings, "project.openings", "postA2");
   const dimensions = validateDeferredModel(root.dimensions, "project.dimensions", "A2");
@@ -237,6 +238,12 @@ function validateDeferredModel(
   if (model.modelVersion !== null) fail(`${path}.modelVersion must be null while deferred.`);
   if (model.data !== null) fail(`${path}.data must be null while deferred.`);
   return { status: "deferred", targetStage, modelVersion: null, data: null };
+}
+
+function validateProjectTopology(value: unknown): ProjectV2["topology"] {
+  const topology = record(value, "project.topology");
+  if (topology.status === "deferred") return validateDeferredModel(value, "project.topology", "A2");
+  return validateTopologyV2(value);
 }
 
 function validateSiteV2(value: unknown): SiteV2 {

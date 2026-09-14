@@ -9,11 +9,19 @@ import {
   UnsupportedProjectVersionError,
 } from "../src/persistence/project-storage.js";
 import { ProjectValidationError } from "../src/project/validation.js";
+import { twoRoomSharedWallTopology } from "./fixtures/topology.js";
 
 describe("ProjectV2 validation and legacy recovery", () => {
   it("round-trips a strictly validated ProjectV2 project", () => {
     const project = createOption3ProjectV2();
     expect(parseProjectJson(serializeProject(project))).toEqual(project);
+  });
+
+  it("preserves active topology and stable IDs through ProjectV2 save/load", () => {
+    const project = { ...createOption3ProjectV2(), topology: twoRoomSharedWallTopology() };
+    const recovered = parseProjectJson(serializeProject(project));
+    expect(recovered.topology).toEqual(project.topology);
+    expect(Object.keys("walls" in recovered.topology ? recovered.topology.walls : {})).toContain("w-shared");
   });
 
   it("recovers an A1-era ProjectV2 save through the explicit revision migration", () => {

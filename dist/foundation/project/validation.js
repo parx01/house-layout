@@ -1,4 +1,5 @@
 import { areaUm2, lengthUm } from "../core/units.js";
+import { validateTopologyV2 } from "../topology/validation.js";
 export class ProjectValidationError extends Error {
     constructor(message) {
         super(message);
@@ -165,7 +166,7 @@ export function validateProjectV2(value) {
     exactKeys(building, ["status", "coverageStatus"], [], "project.building");
     literal(building.status, "deferredToTopologyA2", "project.building.status");
     literal(building.coverageStatus, "deferredToExteriorEnvelopeA4", "project.building.coverageStatus");
-    const topology = validateDeferredModel(root.topology, "project.topology", "A2");
+    const topology = validateProjectTopology(root.topology);
     const spaces = validateDeferredModel(root.spaces, "project.spaces", "A2");
     const openings = validateDeferredModel(root.openings, "project.openings", "postA2");
     const dimensions = validateDeferredModel(root.dimensions, "project.dimensions", "A2");
@@ -215,6 +216,12 @@ function validateDeferredModel(value, path, targetStage) {
     if (model.data !== null)
         fail(`${path}.data must be null while deferred.`);
     return { status: "deferred", targetStage, modelVersion: null, data: null };
+}
+function validateProjectTopology(value) {
+    const topology = record(value, "project.topology");
+    if (topology.status === "deferred")
+        return validateDeferredModel(value, "project.topology", "A2");
+    return validateTopologyV2(value);
 }
 function validateSiteV2(value) {
     const site = record(value, "project.site");

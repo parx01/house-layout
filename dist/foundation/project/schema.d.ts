@@ -1,5 +1,6 @@
 import type { LengthUm } from "../core/units.js";
 import type { SiteV2 } from "../core/site.js";
+import type { TopologyV2 } from "../topology/model.js";
 export interface LegacyRoomV1 {
     id: string;
     name: string;
@@ -64,7 +65,7 @@ export interface ProjectV2 {
         readonly status: "deferredToTopologyA2";
         readonly coverageStatus: "deferredToExteriorEnvelopeA4";
     };
-    readonly topology: DeferredModelSlotV2;
+    readonly topology: DeferredModelSlotV2 | TopologyV2;
     readonly spaces: DeferredModelSlotV2;
     readonly openings: DeferredModelSlotV2;
     readonly dimensions: DeferredModelSlotV2;

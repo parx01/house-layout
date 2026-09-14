@@ -17,7 +17,7 @@ ProjectV2
 ├─ building
 │  ├─ topology: deferred to A2
 │  └─ authoritative footprint coverage: deferred to A4
-├─ topology: deferred versioned-model slot
+├─ topology: deferred slot or canonical A2.1 node/wall graph
 ├─ spaces: deferred versioned-model slot
 ├─ openings: deferred versioned-model slot
 ├─ dimensions: deferred versioned-model slot
@@ -28,11 +28,11 @@ ProjectV2
 
 ## Schema-evolution policy
 
-`schemaVersion: 2` now has an explicit `schemaRevision: 2`. Its five future-model keys are reserved as stable envelopes with `status: "deferred"`, a target stage, and `modelVersion: null` / `data: null`. A2 may introduce a separately versioned and strictly validated payload within the already-reserved topology slot; it must not add a new required ProjectV2 top-level key or reinterpret the legacy editor rectangles as topology.
+`schemaVersion: 2` has an explicit `schemaRevision: 2`. Four future-model keys remain stable deferred envelopes with `status: "deferred"`, a target stage, and `modelVersion: null` / `data: null`. A2.1 activates the already-reserved topology key with a separately versioned and strictly validated canonical node/wall graph. It does not add a ProjectV2 top-level key or reinterpret the legacy editor rectangles as topology.
 
 The original A1 ProjectV2 documents had no `schemaRevision`, future-model slots, or road-width provenance. The loader recognizes exactly that frozen top-level shape as revision 1 and performs a one-way revision-1-to-revision-2 normalization. Unknown fields and unknown explicit revisions remain errors. Automated coverage preserves an A1-shaped save, reloads it, verifies all deferred slots, and round-trips the normalized document.
 
-If A2 cannot fit cleanly in the reserved versioned slots, it must introduce `schemaVersion: 3` and an explicit ProjectV2-to-ProjectV3 migration instead of changing ProjectV2 semantics.
+If later work cannot fit cleanly in the reserved/versioned slots, it must introduce `schemaVersion: 3` and an explicit ProjectV2-to-ProjectV3 migration instead of changing ProjectV2 semantics.
 
 ## Road-width provenance
 
