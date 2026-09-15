@@ -50,7 +50,7 @@ export function createOption3ProjectV2(legacyState: LegacyEditorStateV1 = OPTION
   };
   return {
     schemaVersion: 2,
-    schemaRevision: 3,
+    schemaRevision: 4,
     projectId: "option-3",
     name: "OPTION-3 ground floor",
     units: "um",

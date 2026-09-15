@@ -14,8 +14,17 @@ export declare function validateProjectV2(value: unknown): ProjectV2;
  * the legacy room rectangles as topology.
  */
 export declare function normalizeProjectV2(value: unknown): ProjectV2;
-export declare function migrateProjectV2A1ToRevision3(value: unknown): ProjectV2;
-export declare function migrateProjectV2Revision2To3(value: unknown): ProjectV2;
+export declare function migrateProjectV2A1ToRevision4(value: unknown): ProjectV2;
+export declare function migrateProjectV2Revision2To4(value: unknown): ProjectV2;
+/**
+ * Revision 3 required the spaces slot to be deferred. Validate that historical
+ * meaning before activating semantic spaces only in revision 4.
+ */
+export declare function migrateProjectV2Revision3To4(value: unknown): ProjectV2;
+/** @deprecated Use migrateProjectV2A1ToRevision4. Retained as a source-compatible normalizer. */
+export declare const migrateProjectV2A1ToRevision3: typeof migrateProjectV2A1ToRevision4;
+/** @deprecated Use migrateProjectV2Revision2To4. Retained as a source-compatible normalizer. */
+export declare const migrateProjectV2Revision2To3: typeof migrateProjectV2Revision2To4;
 export declare function detectProjectVersion(value: unknown): 1 | 2;
 export declare function validateLegacyProjectEnvelopeV1(value: unknown): LegacyProjectEnvelopeV1;
 //# sourceMappingURL=validation.d.ts.map

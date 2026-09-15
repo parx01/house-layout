@@ -72,6 +72,8 @@ A2.5 adds pure perpendicular wall-run and orthogonality-preserving junction move
 
 A2.6 switches the SVG editor to canonical topology walls/nodes and A2.4-derived faces. Wall bands use exact centre-line thickness, every topology entity has a read-only hit target, and the old rectangles are available only as a non-interactive comparison layer. See `docs/topology-a2-6.md`.
 
+A3.1 adds persistent semantic `SpaceId` records with strict bindings to currently derived faces. The Option-3 baseline remains unmapped and deferred until A3.2; no semantic editing UI or automatic remapping is included. See `docs/spaces-a3-1.md`.
+
 ## Construction note
 
 The supplied PDF remains a visual reference. Property dimensions, permissions, setbacks, and regulations must be confirmed by a qualified architect and the relevant local authority before construction.

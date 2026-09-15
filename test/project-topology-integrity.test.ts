@@ -23,7 +23,7 @@ function deferredTopology() {
 describe("A2.3.1 legacy/topology integrity", () => {
   it("aligns the active baseline topology and building status", () => {
     const project = validateProjectV2(createOption3ProjectV2());
-    expect(project.schemaRevision).toBe(3);
+    expect(project.schemaRevision).toBe(4);
     expect(project.topology).toEqual(createOption3TopologyV2());
     expect(project.topology.status).toBe("active");
     expect(project.building.status).toBe("topologyActive");
@@ -124,14 +124,14 @@ describe("A2.3.1 legacy/topology integrity", () => {
     expect(() => validateProjectV2(bandOutside)).toThrow(/wall .* thickness band lies outside the current site boundary/);
   });
 
-  it("migrates revision-2 active and deferred saves to truthful revision-3 status", () => {
+  it("migrates revision-2 active and deferred saves to the current truthful status", () => {
     const activeRevision2 = structuredClone(createOption3ProjectV2()) as any;
     activeRevision2.schemaRevision = 2;
     activeRevision2.building.status = "deferredToTopologyA2";
     activeRevision2.legacyEditorState.site.width = OPTION_3_V1_RECOVERY_STATE.site.width;
     activeRevision2.legacyEditorState.site.depth = OPTION_3_V1_RECOVERY_STATE.site.depth;
     const active = parseProjectJson(JSON.stringify(activeRevision2));
-    expect(active.schemaRevision).toBe(3);
+    expect(active.schemaRevision).toBe(4);
     expect(active.topology.status).toBe("active");
     expect(active.building.status).toBe("topologyActive");
     expect(active.legacyEditorState.site).toEqual({ width: 14_986, depth: 24_130, coverageLimit: 0.66 });
@@ -139,7 +139,7 @@ describe("A2.3.1 legacy/topology integrity", () => {
     const deferredRevision2 = structuredClone(activeRevision2);
     deferredRevision2.topology = deferredTopology();
     const deferred = parseProjectJson(JSON.stringify(deferredRevision2));
-    expect(deferred.schemaRevision).toBe(3);
+    expect(deferred.schemaRevision).toBe(4);
     expect(deferred.topology.status).toBe("deferred");
     expect(deferred.building.status).toBe("topologyDeferred");
   });

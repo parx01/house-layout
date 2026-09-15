@@ -51,6 +51,7 @@ export function updateProjectFromLegacyEditorState(project: ProjectV2, legacySta
   const validatedLegacy = validateLegacyProjectEnvelopeV1(legacyState);
   const geometryChanged = !legacyEditorGeometryEquals(current.legacyEditorState, validatedLegacy);
   const topology = geometryChanged ? deferredTopology() : current.topology;
+  const spaces = geometryChanged ? deferredSpaces() : current.spaces;
   const next: ProjectV2 = {
     ...structuredClone(current),
     site: {
@@ -66,12 +67,22 @@ export function updateProjectFromLegacyEditorState(project: ProjectV2, legacySta
       status: topology.status === "active" ? "topologyActive" : "topologyDeferred",
     },
     topology,
+    spaces,
     legacyEditorState: structuredClone(validatedLegacy),
   };
   return validateProjectV2(next);
 }
 
 function deferredTopology(): ProjectV2["topology"] {
+  return {
+    status: "deferred",
+    targetStage: "A2",
+    modelVersion: null,
+    data: null,
+  };
+}
+
+function deferredSpaces(): ProjectV2["spaces"] {
   return {
     status: "deferred",
     targetStage: "A2",

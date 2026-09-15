@@ -1,5 +1,6 @@
 import type { LengthUm } from "../core/units.js";
 import type { SiteV2 } from "../core/site.js";
+import type { SemanticSpacesV1 } from "../spaces/semantic-model.js";
 import type { TopologyV2 } from "../topology/model.js";
 export interface LegacyRoomV1 {
     id: string;
@@ -43,7 +44,7 @@ export interface CoordinateSystemV2 {
 }
 export type DeferredModelTargetStage = "A2" | "postA2";
 /**
- * Stable ProjectV2 envelope for a future versioned geometry model. A2 may
+ * Stable ProjectV2 envelope for versioned geometry and semantic models. A2+
  * activate a slot with a separately validated modelVersion/data payload, but
  * must not add or reinterpret ProjectV2 top-level keys.
  */
@@ -55,7 +56,7 @@ export interface DeferredModelSlotV2 {
 }
 export interface ProjectV2 {
     readonly schemaVersion: 2;
-    readonly schemaRevision: 3;
+    readonly schemaRevision: 4;
     readonly projectId: "option-3";
     readonly name: string;
     readonly units: "um";
@@ -66,7 +67,7 @@ export interface ProjectV2 {
         readonly coverageStatus: "deferredToExteriorEnvelopeA4";
     };
     readonly topology: DeferredModelSlotV2 | TopologyV2;
-    readonly spaces: DeferredModelSlotV2;
+    readonly spaces: DeferredModelSlotV2 | SemanticSpacesV1;
     readonly openings: DeferredModelSlotV2;
     readonly dimensions: DeferredModelSlotV2;
     readonly siteObjects: DeferredModelSlotV2;

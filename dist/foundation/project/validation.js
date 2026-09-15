@@ -1,4 +1,5 @@
 import { areaUm2, legacyMmToUm, lengthUm, umToLegacyMm } from "../core/units.js";
+import { validateSemanticSpacesV1 } from "../spaces/semantic-model.js";
 import { validateTopologyV2 } from "../topology/validation.js";
 import { isOption3BaselineLegacyGeometry } from "./option3-baseline.js";
 import { createOption3TopologyV2 } from "./option3-topology.js";
@@ -152,7 +153,7 @@ export function validateProjectV2(value) {
         "recovery",
     ], [], "project");
     literal(root.schemaVersion, 2, "project.schemaVersion");
-    literal(root.schemaRevision, 3, "project.schemaRevision");
+    literal(root.schemaRevision, 4, "project.schemaRevision");
     literal(root.projectId, "option-3", "project.projectId");
     const name = stringValue(root.name, "project.name");
     literal(root.units, "um", "project.units");
@@ -171,7 +172,7 @@ export function validateProjectV2(value) {
     const buildingStatus = topology.status === "active" ? "topologyActive" : "topologyDeferred";
     literal(building.status, buildingStatus, "project.building.status");
     literal(building.coverageStatus, "deferredToExteriorEnvelopeA4", "project.building.coverageStatus");
-    const spaces = validateDeferredModel(root.spaces, "project.spaces", "A2");
+    const spaces = validateProjectSpaces(root.spaces, topology);
     const openings = validateDeferredModel(root.openings, "project.openings", "postA2");
     const dimensions = validateDeferredModel(root.dimensions, "project.dimensions", "A2");
     const siteObjects = validateDeferredModel(root.siteObjects, "project.siteObjects", "postA2");
@@ -185,7 +186,7 @@ export function validateProjectV2(value) {
     validateCrossModelTopology(site, topology, legacyEditorState);
     return {
         schemaVersion: 2,
-        schemaRevision: 3,
+        schemaRevision: 4,
         projectId: "option-3",
         name,
         units: "um",
@@ -272,8 +273,8 @@ function stringArraysEqual(left, right) {
 }
 function validateDeferredModel(value, path, targetStage) {
     const model = record(value, path);
-    exactKeys(model, ["status", "targetStage", "modelVersion", "data"], [], path);
     literal(model.status, "deferred", `${path}.status`);
+    exactKeys(model, ["status", "targetStage", "modelVersion", "data"], [], path);
     literal(model.targetStage, targetStage, `${path}.targetStage`);
     if (model.modelVersion !== null)
         fail(`${path}.modelVersion must be null while deferred.`);
@@ -286,6 +287,15 @@ function validateProjectTopology(value) {
     if (topology.status === "deferred")
         return validateDeferredModel(value, "project.topology", "A2");
     return validateTopologyV2(value);
+}
+function validateProjectSpaces(value, topology) {
+    const spaces = record(value, "project.spaces");
+    if (spaces.status === "deferred")
+        return validateDeferredModel(value, "project.spaces", "A2");
+    if (topology.status !== "active") {
+        fail("project.spaces cannot be active while project.topology is deferred.");
+    }
+    return validateSemanticSpacesV1(value, topology, "project.spaces");
 }
 function validateSiteV2(value) {
     const site = record(value, "project.site");
@@ -393,16 +403,18 @@ function validateRoadWidthProvenance(value) {
 export function normalizeProjectV2(value) {
     const root = record(value, "project");
     literal(root.schemaVersion, 2, "project.schemaVersion");
-    if (root.schemaRevision === 3)
+    if (root.schemaRevision === 4)
         return validateProjectV2(value);
+    if (root.schemaRevision === 3)
+        return migrateProjectV2Revision3To4(root);
     if (root.schemaRevision === 2)
-        return migrateProjectV2Revision2To3(root);
+        return migrateProjectV2Revision2To4(root);
     if (root.schemaRevision !== undefined) {
         fail(`project.schemaRevision ${String(root.schemaRevision)} is not supported for schemaVersion 2.`);
     }
-    return migrateProjectV2A1ToRevision3(root);
+    return migrateProjectV2A1ToRevision4(root);
 }
-export function migrateProjectV2A1ToRevision3(value) {
+export function migrateProjectV2A1ToRevision4(value) {
     const root = record(value, "project");
     exactKeys(root, ["schemaVersion", "projectId", "name", "units", "coordinateSystem", "site", "building", "legacyEditorState", "recovery"], [], "project");
     literal(root.schemaVersion, 2, "project.schemaVersion");
@@ -427,7 +439,7 @@ export function migrateProjectV2A1ToRevision3(value) {
                     sourceLabel: "ROAD 12.00M WIDE",
                 }
                 : { kind: "legacyProjectUnverified", sourceDocument: null, sourceLabel: null };
-    migrated.schemaRevision = 3;
+    migrated.schemaRevision = 4;
     const migratedBuilding = record(migrated.building, "project.building");
     migratedBuilding.status = "topologyDeferred";
     migrated.topology = deferredModel("A2");
@@ -437,7 +449,7 @@ export function migrateProjectV2A1ToRevision3(value) {
     migrated.siteObjects = deferredModel("postA2");
     return validateProjectV2(migrated);
 }
-export function migrateProjectV2Revision2To3(value) {
+export function migrateProjectV2Revision2To4(value) {
     const root = record(value, "project");
     literal(root.schemaVersion, 2, "project.schemaVersion");
     literal(root.schemaRevision, 2, "project.schemaRevision");
@@ -446,8 +458,9 @@ export function migrateProjectV2Revision2To3(value) {
     literal(building.status, "deferredToTopologyA2", "project.building.status");
     literal(building.coverageStatus, "deferredToExteriorEnvelopeA4", "project.building.coverageStatus");
     const topology = validateProjectTopology(root.topology);
+    validateDeferredModel(root.spaces, "project.spaces", "A2");
     const migrated = structuredClone(root);
-    migrated.schemaRevision = 3;
+    migrated.schemaRevision = 4;
     const migratedBuilding = record(migrated.building, "project.building");
     migratedBuilding.status = topology.status === "active" ? "topologyActive" : "topologyDeferred";
     const migratedLegacy = validateLegacyEditorStateV1(migrated.legacyEditorState, "project.legacyEditorState");
@@ -460,6 +473,40 @@ export function migrateProjectV2Revision2To3(value) {
     }
     return validateProjectV2(migrated);
 }
+/**
+ * Revision 3 required the spaces slot to be deferred. Validate that historical
+ * meaning before activating semantic spaces only in revision 4.
+ */
+export function migrateProjectV2Revision3To4(value) {
+    const root = record(value, "project");
+    exactKeys(root, [
+        "schemaVersion",
+        "schemaRevision",
+        "projectId",
+        "name",
+        "units",
+        "coordinateSystem",
+        "site",
+        "building",
+        "topology",
+        "spaces",
+        "openings",
+        "dimensions",
+        "siteObjects",
+        "legacyEditorState",
+        "recovery",
+    ], [], "project");
+    literal(root.schemaVersion, 2, "project.schemaVersion");
+    literal(root.schemaRevision, 3, "project.schemaRevision");
+    validateDeferredModel(root.spaces, "project.spaces", "A2");
+    const migrated = structuredClone(root);
+    migrated.schemaRevision = 4;
+    return validateProjectV2(migrated);
+}
+/** @deprecated Use migrateProjectV2A1ToRevision4. Retained as a source-compatible normalizer. */
+export const migrateProjectV2A1ToRevision3 = migrateProjectV2A1ToRevision4;
+/** @deprecated Use migrateProjectV2Revision2To4. Retained as a source-compatible normalizer. */
+export const migrateProjectV2Revision2To3 = migrateProjectV2Revision2To4;
 function deferredModel(targetStage) {
     return { status: "deferred", targetStage, modelVersion: null, data: null };
 }
