@@ -1,6 +1,5 @@
 import { legacyMmToUm, umToLegacyMm } from "../core/units.js";
 import { createOption3ProjectV2 } from "../project/option3-baseline.js";
-import { legacyEditorGeometryEquals } from "../project/legacy-geometry.js";
 import type { LegacyEditorStateV1, ProjectV2 } from "../project/schema.js";
 import {
   detectProjectVersion,
@@ -49,9 +48,6 @@ export function projectToLegacyEditorState(project: ProjectV2): LegacyEditorStat
 export function updateProjectFromLegacyEditorState(project: ProjectV2, legacyState: LegacyEditorStateV1): ProjectV2 {
   const current = validateProjectV2(project);
   const validatedLegacy = validateLegacyProjectEnvelopeV1(legacyState);
-  const geometryChanged = !legacyEditorGeometryEquals(current.legacyEditorState, validatedLegacy);
-  const topology = geometryChanged ? deferredTopology() : current.topology;
-  const spaces = geometryChanged ? deferredSpaces() : current.spaces;
   const next: ProjectV2 = {
     ...structuredClone(current),
     site: {
@@ -64,31 +60,11 @@ export function updateProjectFromLegacyEditorState(project: ProjectV2, legacySta
     },
     building: {
       ...current.building,
-      status: topology.status === "active" ? "topologyActive" : "topologyDeferred",
+      status: current.topology.status === "active" ? "topologyActive" : "topologyDeferred",
     },
-    topology,
-    spaces,
     legacyEditorState: structuredClone(validatedLegacy),
   };
   return validateProjectV2(next);
-}
-
-function deferredTopology(): ProjectV2["topology"] {
-  return {
-    status: "deferred",
-    targetStage: "A2",
-    modelVersion: null,
-    data: null,
-  };
-}
-
-function deferredSpaces(): ProjectV2["spaces"] {
-  return {
-    status: "deferred",
-    targetStage: "A2",
-    modelVersion: null,
-    data: null,
-  };
 }
 
 export function readProjectFromStorage(storage: Pick<Storage, "getItem">): ProjectV2 {

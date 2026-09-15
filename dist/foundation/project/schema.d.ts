@@ -56,7 +56,7 @@ export interface DeferredModelSlotV2 {
 }
 export interface ProjectV2 {
     readonly schemaVersion: 2;
-    readonly schemaRevision: 4;
+    readonly schemaRevision: 5;
     readonly projectId: "option-3";
     readonly name: string;
     readonly units: "um";

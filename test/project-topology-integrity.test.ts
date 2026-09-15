@@ -20,10 +20,10 @@ function deferredTopology() {
   return { status: "deferred", targetStage: "A2", modelVersion: null, data: null } as const;
 }
 
-describe("A2.3.1 legacy/topology integrity", () => {
+describe("A2.6.1 authority transition and retained topology integrity", () => {
   it("aligns the active baseline topology and building status", () => {
     const project = validateProjectV2(createOption3ProjectV2());
-    expect(project.schemaRevision).toBe(4);
+    expect(project.schemaRevision).toBe(5);
     expect(project.topology).toEqual(createOption3TopologyV2());
     expect(project.topology.status).toBe("active");
     expect(project.building.status).toBe("topologyActive");
@@ -38,15 +38,26 @@ describe("A2.3.1 legacy/topology integrity", () => {
     ["legacy wall insertion", (state: LegacyEditorStateV1) => {
       state.walls.push({ id: "wall-edited", x1: 1, y1: 1, x2: 2, y2: 1 });
     }],
-    ["site width edit", (state: LegacyEditorStateV1) => { state.site.width = 10_000; }],
-    ["site depth edit", (state: LegacyEditorStateV1) => { state.site.depth = 10_000; }],
-  ])("demotes active topology after a geometry-changing %s", (_label, mutate) => {
+  ])("keeps canonical topology authoritative after a legacy-reference %s", (_label, mutate) => {
     const before = createOption3ProjectV2();
     const edited = editableBaseline();
     mutate(edited);
     const after = updateProjectFromLegacyEditorState(before, edited);
-    expect(after.topology).toEqual(deferredTopology());
-    expect(after.building.status).toBe("topologyDeferred");
+    expect(after.topology).toEqual(before.topology);
+    expect(after.building.status).toBe("topologyActive");
+    expect(after.legacyEditorState).toEqual(edited);
+  });
+
+  it("keeps active topology for a containing site edit and rejects a site that clips it", () => {
+    const before = createOption3ProjectV2();
+    const expanded = editableBaseline();
+    expanded.site.width = 16_000;
+    expect(updateProjectFromLegacyEditorState(before, expanded).topology).toEqual(before.topology);
+
+    const clipped = editableBaseline();
+    clipped.site.width = 10_000;
+    expect(() => updateProjectFromLegacyEditorState(before, clipped)).toThrow(/outside the current site boundary/);
+    expect(before).toEqual(createOption3ProjectV2());
   });
 
   it.each([
@@ -91,17 +102,17 @@ describe("A2.3.1 legacy/topology integrity", () => {
     expect(recovered.building.status).toBe("topologyActive");
   });
 
-  it("rejects active topology paired with divergent legacy geometry", () => {
-    const invalid = structuredClone(createOption3ProjectV2()) as any;
-    invalid.legacyEditorState.rooms[0].x += 1;
-    expect(() => validateProjectV2(invalid)).toThrow("cannot remain active after legacy editor geometry diverges");
+  it("accepts active topology independently of divergent legacy-reference rectangles", () => {
+    const project = structuredClone(createOption3ProjectV2()) as any;
+    project.legacyEditorState.rooms[0].x += 1;
+    expect(validateProjectV2(project).topology).toEqual(project.topology);
   });
 
-  it("rejects a non-curated active graph even when legacy geometry is baseline", () => {
-    const invalid = structuredClone(createOption3ProjectV2()) as any;
-    const firstWall = Object.values(invalid.topology.walls)[0] as any;
+  it("accepts a structurally valid active graph without requiring curated-baseline equality", () => {
+    const project = structuredClone(createOption3ProjectV2()) as any;
+    const firstWall = Object.values(project.topology.walls)[0] as any;
     firstWall.thicknessUm += 1;
-    expect(() => validateProjectV2(invalid)).toThrow("does not match the curated Option-3 topology");
+    expect(validateProjectV2(project).topology).toEqual(project.topology);
   });
 
   it("rejects building status that disagrees with topology state", () => {
@@ -131,7 +142,7 @@ describe("A2.3.1 legacy/topology integrity", () => {
     activeRevision2.legacyEditorState.site.width = OPTION_3_V1_RECOVERY_STATE.site.width;
     activeRevision2.legacyEditorState.site.depth = OPTION_3_V1_RECOVERY_STATE.site.depth;
     const active = parseProjectJson(JSON.stringify(activeRevision2));
-    expect(active.schemaRevision).toBe(4);
+    expect(active.schemaRevision).toBe(5);
     expect(active.topology.status).toBe("active");
     expect(active.building.status).toBe("topologyActive");
     expect(active.legacyEditorState.site).toEqual({ width: 14_986, depth: 24_130, coverageLimit: 0.66 });
@@ -139,7 +150,7 @@ describe("A2.3.1 legacy/topology integrity", () => {
     const deferredRevision2 = structuredClone(activeRevision2);
     deferredRevision2.topology = deferredTopology();
     const deferred = parseProjectJson(JSON.stringify(deferredRevision2));
-    expect(deferred.schemaRevision).toBe(4);
+    expect(deferred.schemaRevision).toBe(5);
     expect(deferred.topology.status).toBe("deferred");
     expect(deferred.building.status).toBe("topologyDeferred");
   });

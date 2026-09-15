@@ -1,6 +1,5 @@
 import { legacyMmToUm, umToLegacyMm } from "../core/units.js";
 import { createOption3ProjectV2 } from "../project/option3-baseline.js";
-import { legacyEditorGeometryEquals } from "../project/legacy-geometry.js";
 import { detectProjectVersion, normalizeProjectV2, ProjectValidationError, UnsupportedProjectVersionError, validateLegacyProjectEnvelopeV1, validateProjectV2, } from "../project/validation.js";
 export const PROJECT_V2_STORAGE_KEY = "plan66-option3-v2";
 export const LEGACY_V1_STORAGE_KEY = "plan66-option3-v1";
@@ -37,9 +36,6 @@ export function projectToLegacyEditorState(project) {
 export function updateProjectFromLegacyEditorState(project, legacyState) {
     const current = validateProjectV2(project);
     const validatedLegacy = validateLegacyProjectEnvelopeV1(legacyState);
-    const geometryChanged = !legacyEditorGeometryEquals(current.legacyEditorState, validatedLegacy);
-    const topology = geometryChanged ? deferredTopology() : current.topology;
-    const spaces = geometryChanged ? deferredSpaces() : current.spaces;
     const next = {
         ...structuredClone(current),
         site: {
@@ -52,29 +48,11 @@ export function updateProjectFromLegacyEditorState(project, legacyState) {
         },
         building: {
             ...current.building,
-            status: topology.status === "active" ? "topologyActive" : "topologyDeferred",
+            status: current.topology.status === "active" ? "topologyActive" : "topologyDeferred",
         },
-        topology,
-        spaces,
         legacyEditorState: structuredClone(validatedLegacy),
     };
     return validateProjectV2(next);
-}
-function deferredTopology() {
-    return {
-        status: "deferred",
-        targetStage: "A2",
-        modelVersion: null,
-        data: null,
-    };
-}
-function deferredSpaces() {
-    return {
-        status: "deferred",
-        targetStage: "A2",
-        modelVersion: null,
-        data: null,
-    };
 }
 export function readProjectFromStorage(storage) {
     const current = storage.getItem(PROJECT_V2_STORAGE_KEY);

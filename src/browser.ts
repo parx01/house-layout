@@ -5,6 +5,7 @@ export * from "./persistence/project-storage.js";
 export * from "./project/option3-baseline.js";
 export * from "./project/legacy-geometry.js";
 export * from "./project/schema.js";
+export * from "./project/topology-update.js";
 export * from "./project/validation.js";
 export * from "./spaces/extract-faces.js";
 export * from "./spaces/model.js";

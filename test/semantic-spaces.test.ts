@@ -126,7 +126,7 @@ describe("A3.1 persistent semantic spaces", () => {
     const revision3 = structuredClone(createOption3ProjectV2()) as any;
     revision3.schemaRevision = 3;
     const migrated = parseProjectJson(JSON.stringify(revision3));
-    expect(migrated.schemaRevision).toBe(4);
+    expect(migrated.schemaRevision).toBe(5);
     expect(migrated.spaces).toEqual({ status: "deferred", targetStage: "A2", modelVersion: null, data: null });
 
     revision3.spaces = projectWithTestSpace().spaces;
@@ -134,13 +134,13 @@ describe("A3.1 persistent semantic spaces", () => {
       .toThrow('project.spaces.status must equal "deferred"');
   });
 
-  it("demotes active face bindings when a legacy geometry edit invalidates topology", () => {
+  it("preserves active face bindings when only legacy-reference rectangles change", () => {
     const project = validateProjectV2(projectWithTestSpace());
     const editedLegacy = structuredClone(project.legacyEditorState);
     editedLegacy.rooms[0]!.x += 1;
     const updated = updateProjectFromLegacyEditorState(project, editedLegacy);
-    expect(updated.topology.status).toBe("deferred");
-    expect(updated.spaces).toEqual({ status: "deferred", targetStage: "A2", modelVersion: null, data: null });
+    expect(updated.topology).toEqual(project.topology);
+    expect(updated.spaces).toEqual(project.spaces);
   });
 
   it("preserves active spaces across non-geometry legacy presentation changes", () => {
@@ -150,5 +150,13 @@ describe("A3.1 persistent semantic spaces", () => {
     const updated = updateProjectFromLegacyEditorState(project, updatedLegacy);
     expect(updated.topology).toEqual(project.topology);
     expect(updated.spaces).toEqual(project.spaces);
+  });
+
+  it("migrates revision-4 active semantic spaces without changing stable bindings", () => {
+    const revision4 = projectWithTestSpace();
+    revision4.schemaRevision = 4;
+    const migrated = parseProjectJson(JSON.stringify(revision4));
+    expect(migrated.schemaRevision).toBe(5);
+    expect(migrated.spaces).toEqual(revision4.spaces);
   });
 });

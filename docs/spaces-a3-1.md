@@ -24,8 +24,8 @@ Validation is strict and rejects:
 - face references absent from the current A2.4 extraction;
 - active spaces when topology is deferred.
 
-Any geometry-changing legacy edit that demotes topology also demotes spaces. Automatic remapping is intentionally deferred.
+Legacy rectangles are compatibility/reference data and no longer invalidate canonical topology or spaces. A canonical topology update preserves spaces only while their current face bindings remain valid. Automatic remapping is intentionally deferred.
 
 ## ProjectV2 migration
 
-ProjectV2 schema revision 4 activates the reserved spaces slot. Revision 3 is not broadened: its spaces field must still be the historical deferred envelope before the loader migrates it to revision 4. Revision-2 and original A1 files continue through explicit migration with spaces deferred.
+ProjectV2 schema revision 4 introduced the active spaces slot. Revision 3 is not broadened: its spaces field must still be the historical deferred envelope. A2.6.1 revision 5 then makes canonical topology independent of legacy rectangles; revision-4 active spaces migrate without changing stable bindings. Revision-2 and original A1 files continue through explicit migration with spaces deferred.

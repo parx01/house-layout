@@ -46,7 +46,7 @@ export function createOption3ProjectV2(legacyState = OPTION_3_V1_RECOVERY_STATE)
     };
     return {
         schemaVersion: 2,
-        schemaRevision: 4,
+        schemaRevision: 5,
         projectId: "option-3",
         name: "OPTION-3 ground floor",
         units: "um",

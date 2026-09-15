@@ -1,5 +1,7 @@
 # A2.3.1 topology integrity hardening
 
+> Historical note: A2.6.1 supersedes the temporary legacy/topology equality rule documented here. Canonical topology is now authoritative; the remaining validation and V1-recovery protections are documented in `topology-a2-6-1.md`.
+
 A2.3.1 keeps the curated A2.3 graph unchanged and hardens the temporary period
 in which the rectangle editor is still the production UI.
 
