@@ -2,11 +2,11 @@ import {
   areaToSquareFeet,
   calculateOption3CanvasViewBox,
   createOption3ProjectV2,
+  createTopologySvgRenderModel,
   decimalFeetToLength,
   formatArchitecturalLength,
   formatSquareFeet,
   foundationSummary,
-  legacyMmToUm,
   lengthUmToLegacyMm,
   OPTION_3_REFERENCE_DEPTH_UM,
   OPTION_3_REFERENCE_WIDTH_UM,
@@ -21,25 +21,24 @@ import {
 
 const SVG_NS = "http://www.w3.org/2000/svg";
 const TEST_MODE = new URLSearchParams(window.location.search).has("test");
-const MM_PER_FT = 304.8;
 const FT2_TO_MM2 = 92_903.04;
-const SNAP_MM = MM_PER_FT * 0.25;
-const MIN_ROOM_MM = MM_PER_FT * 2.5;
 let project = createOption3ProjectV2();
 let projectLoadError = "";
 let state = loadState();
 let selected = null;
 let activeTool = "select";
-let drag = null;
-let drawing = null;
 let history = [];
 let future = [];
 let zoom = 1;
 let toastTimer;
+let showLegacyComparison = false;
+let topologyRenderModel = null;
 
 const svg = document.querySelector("#plan-svg");
-const roomLayer = document.querySelector("#room-layer");
-const wallLayer = document.querySelector("#wall-layer");
+const faceLayer = document.querySelector("#face-layer");
+const legacyComparisonLayer = document.querySelector("#legacy-comparison-layer");
+const topologyWallLayer = document.querySelector("#topology-wall-layer");
+const junctionLayer = document.querySelector("#junction-layer");
 const siteLayer = document.querySelector("#site-layer");
 const interactionLayer = document.querySelector("#interaction-layer");
 const selectionForm = document.querySelector("#selection-form");
@@ -124,22 +123,6 @@ function el(name, attrs = {}) {
   const node = document.createElementNS(SVG_NS, name);
   Object.entries(attrs).forEach(([key, value]) => node.setAttribute(key, String(value)));
   return node;
-}
-
-function snap(value) {
-  return state.snap ? Math.round(value / SNAP_MM) * SNAP_MM : Math.round(value);
-}
-
-function pointFromEvent(event) {
-  const point = svg.createSVGPoint();
-  point.x = event.clientX;
-  point.y = event.clientY;
-  const transformed = point.matrixTransform(svg.getScreenCTM().inverse());
-  return { x: snap(transformed.x), y: snap(transformed.y) };
-}
-
-function formatFeet(mm) {
-  return formatArchitecturalLength(legacyMmToUm(mm));
 }
 
 function formatSqFt(mm2) {
@@ -236,173 +219,119 @@ function renderSite() {
   siteLayer.append(road);
 }
 
-function wallEndpoints(room, side) {
-  const x2 = room.x + room.width;
-  const y2 = room.y + room.height;
-  if (side === "top") return [room.x, room.y, x2, room.y];
-  if (side === "right") return [x2, room.y, x2, y2];
-  if (side === "bottom") return [room.x, y2, x2, y2];
-  return [room.x, room.y, room.x, y2];
+function renderTopologyFaces(model) {
+  faceLayer.replaceChildren();
+  if (!model) {
+    const message = el("text", {
+      x: state.site.width / 2,
+      y: state.site.depth / 2,
+      class: "topology-unavailable",
+    });
+    message.textContent = "Canonical topology unavailable · reset to Option-3 baseline";
+    faceLayer.append(message);
+    return;
+  }
+  model.faces.forEach((face) => {
+    const polygon = el("polygon", {
+      points: face.pointsAttribute,
+      class: `topology-face ${selected?.type === "topology-face" && selected.id === face.id ? "selected" : ""}`,
+      "data-action": "select-topology-face",
+      "data-id": face.id,
+      tabindex: 0,
+      role: "button",
+      "aria-label": `Derived face, ${face.areaLabel}`,
+    });
+    const title = el("title");
+    title.textContent = `Derived face · ${face.areaLabel}`;
+    polygon.append(title);
+    faceLayer.append(polygon);
+    if (state.showLabels) {
+      const label = el("text", { x: face.labelX, y: face.labelY, class: "topology-face-area" });
+      label.textContent = face.areaLabel;
+      faceLayer.append(label);
+    }
+  });
 }
 
-function renderRooms() {
-  roomLayer.replaceChildren();
+function renderLegacyComparison() {
+  legacyComparisonLayer.replaceChildren();
+  if (!showLegacyComparison) return;
   state.rooms.forEach((room) => {
-    const group = el("g", { "data-room-id": room.id });
-    const shape = el("rect", {
+    legacyComparisonLayer.append(el("rect", {
       x: room.x,
       y: room.y,
       width: room.width,
       height: room.height,
-      class: `room-shape ${selected?.type === "room" && selected.id === room.id ? "selected" : ""}`,
-      "data-action": "room",
-      "data-id": room.id,
-    });
-    group.append(shape);
-
-    ["top", "right", "bottom", "left"].forEach((side) => {
-      if (room.hiddenSides.includes(side)) return;
-      const [x1, y1, x2, y2] = wallEndpoints(room, side);
-      group.append(
-        el("line", {
-          x1,
-          y1,
-          x2,
-          y2,
-          class: `room-wall ${selected?.type === "room-wall" && selected.id === room.id && selected.side === side ? "selected" : ""}`,
-          "data-action": "room-wall",
-          "data-id": room.id,
-          "data-side": side,
-        }),
-      );
-    });
-
-    if (state.showLabels && room.width > 1200 && room.height > 1000) {
-      const label = el("text", {
-        x: room.x + room.width / 2,
-        y: room.y + room.height / 2 - 70,
-        class: "room-label",
-      });
-      label.textContent = room.name;
-      group.append(label);
-      const measure = el("text", {
-        x: room.x + room.width / 2,
-        y: room.y + room.height / 2 + 310,
-        class: "room-measure",
-      });
-      measure.textContent = `${formatFeet(room.width)} × ${formatFeet(room.height)}`;
-      group.append(measure);
-    }
-    roomLayer.append(group);
+      class: "legacy-room-comparison",
+      "data-legacy-room-id": room.id,
+    }));
   });
 }
 
-function renderWalls() {
-  wallLayer.replaceChildren();
-  state.walls.forEach((wall) => {
-    wallLayer.append(
-      el("line", {
-        x1: wall.x1,
-        y1: wall.y1,
-        x2: wall.x2,
-        y2: wall.y2,
-        class: `standalone-wall ${selected?.type === "wall" && selected.id === wall.id ? "selected" : ""}`,
-        "data-action": "wall",
-        "data-id": wall.id,
-      }),
-    );
+function renderTopologyWalls(model) {
+  topologyWallLayer.replaceChildren();
+  if (!model) return;
+  model.walls.forEach((wall) => {
+    const group = el("g", {
+      class: `topology-wall-group ${selected?.type === "topology-wall" && selected.id === wall.id ? "selected" : ""}`,
+      "data-wall-id": wall.id,
+    });
+    group.append(el("line", {
+      x1: wall.x1, y1: wall.y1, x2: wall.x2, y2: wall.y2,
+      class: "topology-wall-band",
+      "stroke-width": wall.strokeWidth,
+    }));
+    group.append(el("line", {
+      x1: wall.x1, y1: wall.y1, x2: wall.x2, y2: wall.y2,
+      class: "topology-wall-centre",
+    }));
+    const hit = el("line", {
+      x1: wall.x1, y1: wall.y1, x2: wall.x2, y2: wall.y2,
+      class: "topology-wall-hit topology-hit-target",
+      "data-action": "select-topology-wall",
+      "data-id": wall.id,
+      tabindex: 0,
+      role: "button",
+      "aria-label": `Physical wall, ${wall.lengthLabel} long, ${wall.thicknessLabel} thick`,
+    });
+    const title = el("title");
+    title.textContent = `Physical wall · ${wall.lengthLabel} long · ${wall.thicknessLabel} thick`;
+    hit.append(title);
+    group.append(hit);
+    topologyWallLayer.append(group);
+  });
+}
+
+function renderTopologyJunctions(model) {
+  junctionLayer.replaceChildren();
+  if (!model) return;
+  model.junctions.forEach((junction) => {
+    const group = el("g", {
+      class: `topology-junction-group ${selected?.type === "topology-junction" && selected.id === junction.id ? "selected" : ""}`,
+      "data-node-id": junction.id,
+    });
+    group.append(el("circle", { cx: junction.x, cy: junction.y, r: 78, class: "topology-junction" }));
+    const hit = el("circle", {
+      cx: junction.x,
+      cy: junction.y,
+      r: 190,
+      class: "topology-junction-hit topology-hit-target",
+      "data-action": "select-topology-junction",
+      "data-id": junction.id,
+      tabindex: 0,
+      role: "button",
+      "aria-label": `Canonical junction, degree ${junction.degree}`,
+    });
+    const title = el("title");
+    title.textContent = `Canonical junction · ${junction.degree} connected walls`;
+    hit.append(title);
+    group.append(hit);
+    junctionLayer.append(group);
   });
 }
 
 function renderHandles() {
   interactionLayer.replaceChildren();
-  if (selected?.type === "room") {
-    const room = state.rooms.find((item) => item.id === selected.id);
-    if (!room) return;
-    const handles = {
-      top: [room.x + room.width / 2, room.y],
-      right: [room.x + room.width, room.y + room.height / 2],
-      bottom: [room.x + room.width / 2, room.y + room.height],
-      left: [room.x, room.y + room.height / 2],
-      northwest: [room.x, room.y],
-      northeast: [room.x + room.width, room.y],
-      southeast: [room.x + room.width, room.y + room.height],
-      southwest: [room.x, room.y + room.height],
-    };
-    Object.entries(handles).forEach(([side, [cx, cy]]) => {
-      interactionLayer.append(
-        el("rect", {
-          x: cx - 115,
-          y: cy - 115,
-          width: 230,
-          height: 230,
-          rx: 35,
-          class: "resize-handle",
-          "data-action": "resize-room",
-          "data-id": room.id,
-          "data-side": side,
-        }),
-      );
-    });
-  }
-  if (selected?.type === "wall") {
-    const wall = state.walls.find((item) => item.id === selected.id);
-    if (!wall) return;
-    [["start", wall.x1, wall.y1], ["end", wall.x2, wall.y2]].forEach(([endpoint, cx, cy]) => {
-      interactionLayer.append(
-        el("circle", {
-          cx,
-          cy,
-          r: 145,
-          class: "wall-handle",
-          "data-action": "resize-wall",
-          "data-id": wall.id,
-          "data-endpoint": endpoint,
-        }),
-      );
-    });
-    const centerX = (wall.x1 + wall.x2) / 2;
-    const centerY = (wall.y1 + wall.y2) / 2;
-    interactionLayer.append(
-      el("rect", {
-        x: centerX - 165,
-        y: centerY - 165,
-        width: 330,
-        height: 330,
-        rx: 65,
-        class: "wall-move-handle",
-        "data-action": "move-wall-handle",
-        "data-id": wall.id,
-      }),
-    );
-  }
-  if (selected?.type === "room-wall") {
-    const room = state.rooms.find((item) => item.id === selected.id);
-    if (!room) return;
-    const [x1, y1, x2, y2] = wallEndpoints(room, selected.side);
-    interactionLayer.append(
-      el("rect", {
-        x: (x1 + x2) / 2 - 165,
-        y: (y1 + y2) / 2 - 165,
-        width: 330,
-        height: 330,
-        rx: 65,
-        class: "wall-move-handle",
-        "data-action": "move-room-wall-handle",
-        "data-id": room.id,
-        "data-side": selected.side,
-      }),
-    );
-  }
-  if (drawing) {
-    if (drawing.type === "wall") {
-      interactionLayer.append(el("line", { x1: drawing.start.x, y1: drawing.start.y, x2: drawing.end.x, y2: drawing.end.y, class: "draw-preview" }));
-    } else {
-      const x = Math.min(drawing.start.x, drawing.end.x);
-      const y = Math.min(drawing.start.y, drawing.end.y);
-      interactionLayer.append(el("rect", { x, y, width: Math.abs(drawing.end.x - drawing.start.x), height: Math.abs(drawing.end.y - drawing.start.y), class: "draw-preview" }));
-    }
-  }
 }
 
 function renderCoverage() {
@@ -430,31 +359,31 @@ function renderSelection() {
   }
   emptySelection.hidden = true;
   selectionForm.hidden = false;
-  if (selected.type === "room") {
-    const room = state.rooms.find((item) => item.id === selected.id);
-    if (!room) { selected = null; return renderSelection(); }
+  if (selected.type === "topology-face") {
+    const face = topologyRenderModel?.faces.find((item) => item.id === selected.id);
+    if (!face) { selected = null; return renderSelection(); }
     selectionForm.innerHTML = `
-      <div><div class="selection-name">${escapeHtml(room.name)}</div><div class="selection-type">Room</div></div>
-      <label class="selection-field">Name <span><input name="name" value="${escapeHtml(room.name)}" style="width:130px;text-align:left"></span></label>
-      <label class="selection-field">Width <span><input name="width" type="text" inputmode="text" value="${escapeHtml(formatFeet(room.width))}"></span></label>
-      <label class="selection-field">Depth <span><input name="height" type="text" inputmode="text" value="${escapeHtml(formatFeet(room.height))}"></span></label>
-      <div class="selection-field">Room area <span>${formatSqFt(room.width * room.height)}</span></div>
-      <label class="coverage-check"><input name="included" type="checkbox" ${room.included ? "checked" : ""}> Count this room toward coverage</label>
-      <div class="selection-actions"><button type="button" class="danger-button" data-delete>Delete room</button></div>`;
-  } else if (selected.type === "room-wall") {
-    const room = state.rooms.find((item) => item.id === selected.id);
+      <div><div class="selection-name">Derived face</div><div class="selection-type">Read-only · no room semantics</div></div>
+      <div class="selection-field">Area <span>${escapeHtml(face.areaLabel)}</span></div>
+      <div class="selection-field">Boundary <span>${face.boundary.length} wall segments</span></div>
+      <p class="field-note">${escapeHtml(face.id)}<br>Polygon and area are derived from canonical directed wall references.</p>`;
+  } else if (selected.type === "topology-wall") {
+    const wall = topologyRenderModel?.walls.find((item) => item.id === selected.id);
+    if (!wall) { selected = null; return renderSelection(); }
     selectionForm.innerHTML = `
-      <div><div class="selection-name">${escapeHtml(room?.name || "Room")} · ${selected.side} wall</div><div class="selection-type">Room wall</div></div>
-      <p class="field-note">Clicking only selects this wall. Drag its amber handle to resize the room, or use Delete wall to create an opening.</p>
-      <div class="selection-actions"><button type="button" class="danger-button" data-delete>Delete wall</button></div>`;
+      <div><div class="selection-name">Physical wall</div><div class="selection-type">Canonical centre-line · read-only</div></div>
+      <div class="selection-field">Length <span>${escapeHtml(wall.lengthLabel)}</span></div>
+      <div class="selection-field">Thickness <span>${escapeHtml(wall.thicknessLabel)}</span></div>
+      <p class="field-note">${escapeHtml(wall.id)}<br>${escapeHtml(wall.startNodeId)} → ${escapeHtml(wall.endNodeId)}</p>`;
   } else {
-    const wall = state.walls.find((item) => item.id === selected.id);
-    const length = wall ? Math.hypot(wall.x2 - wall.x1, wall.y2 - wall.y1) : 0;
+    const junction = topologyRenderModel?.junctions.find((item) => item.id === selected.id);
+    if (!junction) { selected = null; return renderSelection(); }
     selectionForm.innerHTML = `
-      <div><div class="selection-name">Added wall</div><div class="selection-type">Independent wall</div></div>
-      <label class="selection-field">Length <span>${formatFeet(length)}</span></label>
-      <p class="field-note">Clicking only selects this wall. Drag the amber centre handle to move it, or drag either round endpoint to reshape it.</p>
-      <div class="selection-actions"><button type="button" class="danger-button" data-delete>Delete wall</button></div>`;
+      <div><div class="selection-name">Canonical junction</div><div class="selection-type">Shared node · read-only</div></div>
+      <div class="selection-field">Connected walls <span>${junction.degree}</span></div>
+      <div class="selection-field">X from origin <span>${escapeHtml(junction.xLabel)}</span></div>
+      <div class="selection-field">Y from origin <span>${escapeHtml(junction.yLabel)}</span></div>
+      <p class="field-note">${escapeHtml(junction.id)}</p>`;
   }
 }
 
@@ -463,9 +392,14 @@ function escapeHtml(value) {
 }
 
 function render() {
+  topologyRenderModel = project.topology?.status === "active"
+    ? createTopologySvgRenderModel(project.topology)
+    : null;
   renderSite();
-  renderRooms();
-  renderWalls();
+  renderTopologyFaces(topologyRenderModel);
+  renderLegacyComparison();
+  renderTopologyWalls(topologyRenderModel);
+  renderTopologyJunctions(topologyRenderModel);
   renderHandles();
   renderCoverage();
   renderSelection();
@@ -505,206 +439,60 @@ function render() {
   document.querySelector("#opacity-output").textContent = `${Math.round(state.reference.opacity * 100)}%`;
   document.querySelector("#snap-grid").checked = state.snap;
   document.querySelector("#show-labels").checked = state.showLabels;
+  document.querySelector("#show-legacy-comparison").checked = showLegacyComparison;
+  svg.dataset.geometrySource = topologyRenderModel ? "canonical-topology" : "topology-deferred";
+  svg.dataset.faceCount = String(topologyRenderModel?.faces.length ?? 0);
+  svg.dataset.wallCount = String(topologyRenderModel?.walls.length ?? 0);
+  svg.dataset.junctionCount = String(topologyRenderModel?.junctions.length ?? 0);
   svg.dataset.tool = activeTool;
   updateUndoButtons();
 }
 
 function setTool(tool) {
-  activeTool = tool;
-  drawing = null;
+  if (tool !== "select") {
+    showToast("Topology geometry is read-only in A2.6");
+    return;
+  }
+  activeTool = "select";
   document.querySelectorAll("[data-tool]").forEach((button) => {
     const active = button.dataset.tool === tool;
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
-  const copy = {
-    select: ["Select and adjust", "Click a wall, then drag its visible handles"],
-    room: ["Draw a room", "Drag on the plan to set its width and depth"],
-    wall: ["Draw a wall", "Drag from one endpoint to the other"],
-  }[tool];
-  document.querySelector("#canvas-title").textContent = copy[0];
-  document.querySelector("#canvas-hint").textContent = copy[1];
+  document.querySelector("#canvas-title").textContent = "Inspect canonical topology";
+  document.querySelector("#canvas-hint").textContent = "Select faces, physical walls, and junctions · read-only";
   renderHandles();
 }
 
 function startDrag(event, target) {
   const action = target.dataset.action;
-  const start = pointFromEvent(event);
-  if (action === "room") {
-    const room = state.rooms.find((item) => item.id === target.dataset.id);
-    selected = { type: "room", id: room.id };
-    pushHistory();
-    drag = { type: "move-room", id: room.id, start, original: clone(room) };
-  } else if (action === "resize-room") {
-    const room = state.rooms.find((item) => item.id === target.dataset.id);
-    pushHistory();
-    drag = { type: "resize-room", id: room.id, side: target.dataset.side, start, original: clone(room) };
-  } else if (action === "room-wall") {
-    const room = state.rooms.find((item) => item.id === target.dataset.id);
-    selected = { type: "room-wall", id: room.id, side: target.dataset.side };
-  } else if (action === "move-room-wall-handle") {
-    const room = state.rooms.find((item) => item.id === target.dataset.id);
-    pushHistory();
-    drag = { type: "resize-room", id: room.id, side: target.dataset.side, start, original: clone(room) };
-  } else if (action === "wall") {
-    const wall = state.walls.find((item) => item.id === target.dataset.id);
-    selected = { type: "wall", id: wall.id };
-  } else if (action === "move-wall-handle") {
-    const wall = state.walls.find((item) => item.id === target.dataset.id);
-    pushHistory();
-    drag = { type: "move-wall", id: wall.id, start, original: clone(wall) };
-  } else if (action === "resize-wall") {
-    const wall = state.walls.find((item) => item.id === target.dataset.id);
-    pushHistory();
-    drag = { type: "resize-wall", id: wall.id, endpoint: target.dataset.endpoint, original: clone(wall) };
-  }
-  if (drag) {
-    svg.setPointerCapture(event.pointerId);
-    render();
-  }
-}
-
-function resizeRoom(room, original, side, point, start) {
-  const dx = point.x - start.x;
-  const dy = point.y - start.y;
-  if (side.includes("left") || side.includes("west")) {
-    room.width = Math.max(MIN_ROOM_MM, original.width - dx);
-    room.x = original.x + original.width - room.width;
-  }
-  if (side.includes("right") || side.includes("east")) {
-    room.width = Math.max(MIN_ROOM_MM, original.width + dx);
-  }
-  if (side.includes("top") || side.includes("north")) {
-    room.height = Math.max(MIN_ROOM_MM, original.height - dy);
-    room.y = original.y + original.height - room.height;
-  }
-  if (side.includes("bottom") || side.includes("south")) {
-    room.height = Math.max(MIN_ROOM_MM, original.height + dy);
-  }
+  if (action === "select-topology-face") selected = { type: "topology-face", id: target.dataset.id };
+  else if (action === "select-topology-wall") selected = { type: "topology-wall", id: target.dataset.id };
+  else if (action === "select-topology-junction") selected = { type: "topology-junction", id: target.dataset.id };
+  else return;
+  event.preventDefault();
+  render();
 }
 
 svg.addEventListener("pointerdown", (event) => {
   const target = event.target.closest("[data-action]");
-  if (activeTool === "select" && target) {
+  if (target) {
     startDrag(event, target);
     return;
   }
-  if (activeTool === "select") {
-    selected = null;
-    render();
-    return;
-  }
-  const start = pointFromEvent(event);
-  drawing = { type: activeTool, start, end: start };
-  svg.setPointerCapture(event.pointerId);
-  renderHandles();
-});
-
-svg.addEventListener("pointermove", (event) => {
-  const point = pointFromEvent(event);
-  if (drawing) {
-    drawing.end = point;
-    renderHandles();
-    return;
-  }
-  if (!drag) return;
-  if (drag.type === "move-room") {
-    const room = state.rooms.find((item) => item.id === drag.id);
-    room.x = snap(drag.original.x + point.x - drag.start.x);
-    room.y = snap(drag.original.y + point.y - drag.start.y);
-  } else if (drag.type === "resize-room") {
-    const room = state.rooms.find((item) => item.id === drag.id);
-    Object.assign(room, clone(drag.original));
-    resizeRoom(room, drag.original, drag.side, point, drag.start);
-  } else if (drag.type === "move-wall") {
-    const wall = state.walls.find((item) => item.id === drag.id);
-    const dx = point.x - drag.start.x;
-    const dy = point.y - drag.start.y;
-    wall.x1 = snap(drag.original.x1 + dx);
-    wall.y1 = snap(drag.original.y1 + dy);
-    wall.x2 = snap(drag.original.x2 + dx);
-    wall.y2 = snap(drag.original.y2 + dy);
-  } else if (drag.type === "resize-wall") {
-    const wall = state.walls.find((item) => item.id === drag.id);
-    if (drag.endpoint === "start") { wall.x1 = point.x; wall.y1 = point.y; }
-    else { wall.x2 = point.x; wall.y2 = point.y; }
-  }
+  selected = null;
   render();
 });
 
-svg.addEventListener("pointerup", () => {
-  if (drawing) {
-    const { start, end, type } = drawing;
-    if (Math.hypot(end.x - start.x, end.y - start.y) > 300) {
-      pushHistory();
-      if (type === "wall") {
-        const wall = { id: `wall-${Date.now()}`, x1: start.x, y1: start.y, x2: end.x, y2: end.y };
-        state.walls.push(wall);
-        selected = { type: "wall", id: wall.id };
-      } else {
-        const room = {
-          id: `room-${Date.now()}`,
-          name: `New Room ${state.rooms.length + 1}`,
-          x: Math.min(start.x, end.x),
-          y: Math.min(start.y, end.y),
-          width: Math.max(MIN_ROOM_MM, Math.abs(end.x - start.x)),
-          height: Math.max(MIN_ROOM_MM, Math.abs(end.y - start.y)),
-          included: true,
-          hiddenSides: [],
-        };
-        state.rooms.push(room);
-        selected = { type: "room", id: room.id };
-      }
-      setTool("select");
-      saveState();
-    }
-    drawing = null;
-  }
-  if (drag) {
-    drag = null;
-    saveState();
-  }
-  render();
+svg.addEventListener("keydown", (event) => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const target = event.target.closest?.("[data-action]");
+  if (target) startDrag(event, target);
 });
 
 function deleteSelection() {
-  if (!selected) return;
-  pushHistory();
-  if (selected.type === "room") {
-    state.rooms = state.rooms.filter((item) => item.id !== selected.id);
-  } else if (selected.type === "room-wall") {
-    const room = state.rooms.find((item) => item.id === selected.id);
-    if (room && !room.hiddenSides.includes(selected.side)) room.hiddenSides.push(selected.side);
-  } else if (selected.type === "wall") {
-    state.walls = state.walls.filter((item) => item.id !== selected.id);
-  }
-  selected = null;
-  render();
-  saveState();
+  if (selected) showToast("Topology geometry is read-only in A2.6");
 }
-
-selectionForm.addEventListener("change", (event) => {
-  if (selected?.type !== "room") return;
-  const room = state.rooms.find((item) => item.id === selected.id);
-  if (!room) return;
-  const field = event.target.name;
-  try {
-    let parsedLength = null;
-    if (field === "width" || field === "height") parsedLength = parseArchitecturalLength(event.target.value);
-    pushHistory();
-    if (field === "name") room.name = event.target.value.trim() || "Room";
-    if (field === "width") room.width = Math.max(MIN_ROOM_MM, lengthUmToLegacyMm(parsedLength));
-    if (field === "height") room.height = Math.max(MIN_ROOM_MM, lengthUmToLegacyMm(parsedLength));
-    if (field === "included") room.included = event.target.checked;
-  } catch (error) {
-    showToast(error instanceof Error ? error.message : "Invalid dimension");
-  }
-  render();
-  saveState();
-});
-selectionForm.addEventListener("click", (event) => {
-  if (event.target.closest("[data-delete]")) deleteSelection();
-});
 
 document.querySelectorAll("[data-tool]").forEach((button) => button.addEventListener("click", () => setTool(button.dataset.tool)));
 document.querySelector("#delete-selection").addEventListener("click", deleteSelection);
@@ -722,6 +510,10 @@ document.querySelector("#snap-grid").addEventListener("change", (event) => {
 });
 document.querySelector("#show-labels").addEventListener("change", (event) => {
   state.showLabels = event.target.checked; render(); saveState();
+});
+document.querySelector("#show-legacy-comparison").addEventListener("change", (event) => {
+  showLegacyComparison = event.target.checked;
+  render();
 });
 
 [["site-width", "width"], ["site-depth", "depth"]].forEach(([id, key]) => {
@@ -792,7 +584,7 @@ document.querySelector("#fit-plan").addEventListener("click", () => {
 });
 
 document.querySelector("#reset-plan").addEventListener("click", () => {
-  if (!window.confirm("Reset all rooms, walls, and coverage inputs to the OPTION-3 starting plan?")) return;
+  if (!window.confirm("Reset to the canonical OPTION-3 baseline project?")) return;
   pushHistory();
   project = createOption3ProjectV2();
   state = projectToLegacyEditorState(project);
@@ -823,6 +615,8 @@ document.querySelector("#export-json").addEventListener("click", () => {
 document.querySelector("#export-svg").addEventListener("click", () => {
   const copy = svg.cloneNode(true);
   copy.querySelector("#interaction-layer")?.remove();
+  copy.querySelector("#legacy-comparison-layer")?.remove();
+  copy.querySelectorAll(".topology-hit-target").forEach((target) => target.remove());
   copy.querySelector("#grid-layer")?.remove();
   copy.setAttribute("viewBox", `0 0 ${state.site.width} ${state.site.depth}`);
   copy.setAttribute("width", `${state.site.width / 25.4}in`);
@@ -842,8 +636,6 @@ function showToast(message) {
 window.addEventListener("keydown", (event) => {
   if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName)) return;
   if (event.key.toLowerCase() === "v") setTool("select");
-  if (event.key.toLowerCase() === "r") setTool("room");
-  if (event.key.toLowerCase() === "w") setTool("wall");
   if (event.key === "Delete" || event.key === "Backspace") deleteSelection();
   if (event.ctrlKey && event.key.toLowerCase() === "z") { event.preventDefault(); undo(); }
   if (event.ctrlKey && event.key.toLowerCase() === "y") { event.preventDefault(); redo(); }
@@ -882,47 +674,6 @@ function registerAgentTools() {
         roomCount: state.rooms.length,
         addedWallCount: state.walls.length,
       };
-    },
-  });
-
-  register({
-    name: "add_plan_room",
-    title: "Add room",
-    description: "Add one rectangular room to the visible plan using feet for coordinates and dimensions.",
-    inputSchema: {
-      type: "object",
-      properties: {
-        name: { type: "string", minLength: 1 },
-        xFt: { type: "number", minimum: 0 },
-        yFt: { type: "number", minimum: 0 },
-        widthFt: { type: "number", minimum: 2.5 },
-        depthFt: { type: "number", minimum: 2.5 },
-        countsTowardCoverage: { type: "boolean" },
-      },
-      required: ["name", "xFt", "yFt", "widthFt", "depthFt"],
-      additionalProperties: false,
-    },
-    annotations: { readOnlyHint: false, untrustedContentHint: false },
-    execute(input) {
-      if (!input || typeof input.name !== "string" || !Number.isFinite(input.widthFt) || !Number.isFinite(input.depthFt)) {
-        throw new Error("Valid room name, widthFt, and depthFt are required.");
-      }
-      pushHistory();
-      const room = {
-        id: `room-${Date.now()}`,
-        name: input.name.trim(),
-        x: Number(input.xFt) * MM_PER_FT,
-        y: Number(input.yFt) * MM_PER_FT,
-        width: Math.max(MIN_ROOM_MM, Number(input.widthFt) * MM_PER_FT),
-        height: Math.max(MIN_ROOM_MM, Number(input.depthFt) * MM_PER_FT),
-        included: input.countsTowardCoverage !== false,
-        hiddenSides: [],
-      };
-      state.rooms.push(room);
-      selected = { type: "room", id: room.id };
-      render();
-      saveState();
-      return { id: room.id, coveragePercent: coverageValues().percent };
     },
   });
 

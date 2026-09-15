@@ -128,6 +128,8 @@ kbd {
   font-size: 0.86rem;
 }
 .tool:hover { background: #f2f6f8; }
+.tool:disabled { opacity: 0.42; cursor: not-allowed; }
+.tool:disabled:hover { background: transparent; }
 .tool.active { background: var(--navy); color: white; }
 .tool.active kbd { color: #c8d6df; background: #243b50; border-color: #3b546a; }
 .tool-icon { font-size: 1.15rem; color: var(--teal); text-align: center; }
@@ -230,6 +232,86 @@ kbd {
 .buildable-envelope { fill: none; stroke: #18a999; stroke-width: 55; stroke-dasharray: 240 140; pointer-events: none; }
 .preferred-rear-line { stroke: #18a999; stroke-width: 38; stroke-dasharray: 85 100; opacity: 0.72; pointer-events: none; }
 .road-label { font-size: 420px; letter-spacing: 70px; fill: #516574; font-weight: 750; text-anchor: middle; }
+.comparison-toggle { padding-top: 9px; border-top: 1px dashed #d7e0e7; }
+.topology-face {
+  fill: rgba(24, 169, 153, 0.085);
+  stroke: rgba(24, 107, 116, 0.24);
+  stroke-width: 28;
+  cursor: pointer;
+  transition: fill 120ms ease, stroke 120ms ease;
+}
+.topology-face:hover { fill: rgba(24, 169, 153, 0.17); stroke: rgba(13, 104, 112, 0.6); }
+.topology-face.selected { fill: rgba(244, 185, 66, 0.22); stroke: #d99a20; stroke-width: 52; }
+.topology-face-area {
+  pointer-events: none;
+  text-anchor: middle;
+  dominant-baseline: middle;
+  fill: rgba(34, 76, 87, 0.78);
+  font-size: 235px;
+  font-weight: 760;
+  paint-order: stroke;
+  stroke: rgba(255, 255, 255, 0.86);
+  stroke-width: 60;
+  stroke-linejoin: round;
+}
+.topology-wall-group { cursor: pointer; }
+.topology-wall-band {
+  stroke: #172b3a;
+  stroke-linecap: square;
+  opacity: 0.9;
+  pointer-events: none;
+  transition: stroke 120ms ease, opacity 120ms ease;
+}
+.topology-wall-centre {
+  stroke: rgba(255, 255, 255, 0.32);
+  stroke-width: 18;
+  stroke-linecap: square;
+  pointer-events: none;
+}
+.topology-wall-hit {
+  stroke: transparent;
+  stroke-width: 430;
+  stroke-linecap: round;
+  fill: none;
+  pointer-events: stroke;
+}
+.topology-wall-group:hover .topology-wall-band { stroke: #0e887e; opacity: 1; }
+.topology-wall-group.selected .topology-wall-band {
+  stroke: var(--amber);
+  opacity: 1;
+  filter: url(#selection-glow);
+}
+.topology-junction {
+  fill: #f8fbfc;
+  stroke: #496b7c;
+  stroke-width: 28;
+  pointer-events: none;
+  transition: fill 120ms ease, stroke 120ms ease;
+}
+.topology-junction-group { cursor: pointer; }
+.topology-junction-hit { fill: transparent; stroke: transparent; pointer-events: all; }
+.topology-junction-group:hover .topology-junction { fill: #c9f1eb; stroke: #0e887e; }
+.topology-junction-group.selected .topology-junction {
+  fill: var(--amber);
+  stroke: #7b5710;
+  filter: url(#selection-glow);
+}
+.legacy-room-comparison {
+  fill: rgba(173, 69, 148, 0.035);
+  stroke: rgba(151, 57, 130, 0.7);
+  stroke-width: 42;
+  stroke-dasharray: 150 100;
+  pointer-events: none;
+}
+.topology-unavailable {
+  fill: #7a3940;
+  font-size: 360px;
+  font-weight: 760;
+  text-anchor: middle;
+  paint-order: stroke;
+  stroke: white;
+  stroke-width: 85;
+}
 .room-shape { fill: rgba(24, 169, 153, 0.10); cursor: move; }
 .room-shape:hover { fill: rgba(24, 169, 153, 0.17); }
 .room-shape.selected { fill: rgba(244, 185, 66, 0.20); }

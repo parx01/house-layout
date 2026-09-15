@@ -1,6 +1,6 @@
 # Plan 66 house-plan editor
 
-Plan 66 is a local SVG editor for inspecting and adjusting the OPTION-3 rectangle prototype. Its ProjectV2 foundation now includes the curated A2.3 canonical physical wall topology while the visible editor remains the isolated legacy adapter.
+Plan 66 is a local SVG editor for inspecting the OPTION-3 canonical physical-wall topology and its derived bounded faces. In A2.6 the visible plan is topology-native and read-only; legacy rectangles remain compatibility/reference data and can be shown only through the optional comparison overlay.
 
 ## Open it
 
@@ -12,14 +12,14 @@ python -m http.server 8765 --bind 127.0.0.1 --directory dist
 
 Open `http://127.0.0.1:8765/`. Keep the entire `dist` folder together because the editor loads its compiled foundation, stylesheet, and preserved reference image from nearby files.
 
-## Edit the legacy prototype
+## Inspect the canonical plan
 
-- Move a room: choose **Select**, then drag the room.
-- Resize a room: select it, then drag an edge or corner handle.
-- Remove one side of a room: click that wall, then choose **Delete selected**.
-- Add a room or wall with the drawing tools.
-- Enter room and site lengths as architectural measurements such as `10'6"` or `49'2"`.
-- Undo or redo with the buttons or keyboard shortcuts.
+- Select a bounded face to inspect its exact derived area and directed-wall boundary count.
+- Select a physical wall to inspect its canonical ID, centre-line length, endpoints, and thickness.
+- Select a junction to inspect its canonical ID, degree, and exact coordinates.
+- Toggle **Legacy comparison** only when comparing the old rectangle tracing against canonical geometry.
+- Zoom with the toolbar and scroll the drawing viewport independently when the plan is larger than the canvas.
+- Room/wall creation, deletion, and geometry dragging remain disabled until the later interaction phase.
 
 The browser saves a strictly validated ProjectV2 document locally. **Save project** downloads the same V2 format. A corrupt project or an unsupported schema version is rejected explicitly; it is never shallow-merged into defaults. A1-era ProjectV2 saves are recovered by an explicit schema-revision migration before validation.
 
@@ -43,7 +43,7 @@ The visible **1,969.11 sq ft** covered-area number is explicitly a legacy rectan
 - `src/topology`: canonical node/wall graph, structural validation, A2.2 insertion/splitting, and A2.5 transactional movement operations.
 - `src/spaces`: A2.4 renderer-independent, derived bounded-face extraction from canonical topology.
 - `src/persistence`: schema detection, V1 recovery wrapping, ProjectV2 serialization, and browser storage.
-- `src/ui`: the adapter that keeps the existing rectangle editor inspectable.
+- `src/ui`: legacy compatibility plus the pure topology-to-SVG render adapter.
 - `fixtures`: immutable original V1 state and reference-image identity.
 - `docs`: ProjectV2 boundary and coordinate/orientation convention.
 - `test`: Vitest coverage for units, site calculations, validation, recovery, and preserved assets.
@@ -56,7 +56,7 @@ npm test
 npm run build
 ```
 
-`npm run build` compiles the TypeScript foundation to `dist/foundation`. The existing SVG renderer remains a transitional legacy UI adapter; A2.3 does not add production topology rendering or editing.
+`npm run build` compiles the TypeScript foundation to `dist/foundation`.
 
 A2.1 establishes only the internal serialized topology graph. The current Option-3 rectangles are not converted or rendered as topology yet; see `docs/topology-a2-1.md` for the centre-line convention and validation boundary.
 
@@ -69,6 +69,8 @@ A2.3.1 prevents that graph from becoming stale while the legacy rectangle UI rem
 A2.4 deterministically derives 13 bounded faces for Option-3 from directed wall half-edges. Faces and exact areas are runtime products rather than persisted duplicate geometry; semantic rooms remain deferred. See `docs/topology-a2-4.md`.
 
 A2.5 adds pure perpendicular wall-run and orthogonality-preserving junction movement. Candidate copies must pass topology validation and retain the same A2.4 face boundaries before they are returned; no production dragging or persistence change is included. See `docs/topology-a2-5.md`.
+
+A2.6 switches the SVG editor to canonical topology walls/nodes and A2.4-derived faces. Wall bands use exact centre-line thickness, every topology entity has a read-only hit target, and the old rectangles are available only as a non-interactive comparison layer. See `docs/topology-a2-6.md`.
 
 ## Construction note
 

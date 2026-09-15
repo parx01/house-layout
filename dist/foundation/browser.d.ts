@@ -14,4 +14,5 @@ export * from "./topology/operations.js";
 export * from "./topology/validation.js";
 export * from "./ui/legacy-adapter.js";
 export * from "./ui/reference-calibration.js";
+export * from "./ui/topology-renderer.js";
 //# sourceMappingURL=browser.d.ts.map

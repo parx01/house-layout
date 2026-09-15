@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <meta
       name="description"
-      content="A local visual editor for adjusting the OPTION-3 house plan with a fixed 66 percent coverage limit."
+      content="A topology-native read-only view of the canonical OPTION-3 house plan."
     />
     <title>Plan 66 - House Plan Editor</title>
     <link
@@ -13,7 +13,7 @@
       type="image/svg+xml"
       href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='12' fill='%230d1b2a'/%3E%3Cpath d='M14 48V17h36v31M14 31h36M29 17v31' fill='none' stroke='%23f4b942' stroke-width='5'/%3E%3C/svg%3E"
     />
-    <link rel="stylesheet" href="styles.css?v=20260914-4" />
+    <link rel="stylesheet" href="styles.css?v=20260915-a26" />
   </head>
   <body>
     <header class="app-header">
@@ -43,13 +43,13 @@
           <button class="tool active" data-tool="select" aria-pressed="true">
             <span class="tool-icon">↖</span><span>Select</span><kbd>V</kbd>
           </button>
-          <button class="tool" data-tool="room" aria-pressed="false">
+          <button class="tool" data-tool="room" aria-pressed="false" disabled title="Geometry editing begins after A2.6">
             <span class="tool-icon">▭</span><span>Add room</span><kbd>R</kbd>
           </button>
-          <button class="tool" data-tool="wall" aria-pressed="false">
+          <button class="tool" data-tool="wall" aria-pressed="false" disabled title="Geometry editing begins after A2.6">
             <span class="tool-icon">╱</span><span>Add wall</span><kbd>W</kbd>
           </button>
-          <button class="tool" id="delete-selection">
+          <button class="tool" id="delete-selection" disabled title="Geometry editing begins after A2.6">
             <span class="tool-icon">⌫</span><span>Delete selected</span><kbd>Del</kbd>
           </button>
         </div>
@@ -76,22 +76,26 @@
             <input id="snap-grid" type="checkbox" checked />
           </label>
           <label class="switch-row">
-            <span>Room names</span>
+            <span>Derived face areas</span>
             <input id="show-labels" type="checkbox" checked />
+          </label>
+          <label class="switch-row comparison-toggle">
+            <span>Legacy comparison</span>
+            <input id="show-legacy-comparison" type="checkbox" />
           </label>
         </section>
 
         <section class="panel-section help-card">
           <div class="section-title">Quick use</div>
-          <p>Click a wall to select it, then drag its handles. Walls are removed only with Delete selected or the Delete key.</p>
+          <p>Select a face, physical wall, or junction to inspect topology-derived details. Geometry is read-only in A2.6.</p>
         </section>
       </aside>
 
       <section class="drawing-shell" aria-label="House plan drawing area">
         <div class="canvas-toolbar">
           <div>
-            <strong id="canvas-title">Select and adjust</strong>
-            <span id="canvas-hint">Click a wall, then drag its visible handles</span>
+            <strong id="canvas-title">Inspect canonical topology</strong>
+            <span id="canvas-hint">Select faces, physical walls, and junctions · read-only</span>
           </div>
           <div class="canvas-controls">
             <button class="icon-button" id="zoom-out" aria-label="Zoom out">−</button>
@@ -122,6 +126,7 @@
               </filter>
             </defs>
             <rect id="grid-layer" x="0" y="0" width="14986" height="24130" fill="url(#grid)" />
+            <g id="site-layer"></g>
             <g id="reference-layer">
               <image
                 href="assets/option-3-reference.png"
@@ -132,9 +137,10 @@
                 preserveAspectRatio="none"
               />
             </g>
-            <g id="site-layer"></g>
-            <g id="room-layer"></g>
-            <g id="wall-layer"></g>
+            <g id="face-layer"></g>
+            <g id="legacy-comparison-layer"></g>
+            <g id="topology-wall-layer"></g>
+            <g id="junction-layer"></g>
             <g id="interaction-layer"></g>
           </svg>
 
@@ -187,7 +193,7 @@
 
         <section class="panel-section selection-section">
           <div class="section-title">Selection</div>
-          <div id="empty-selection" class="empty-selection">Select a room or wall to edit its dimensions.</div>
+          <div id="empty-selection" class="empty-selection">Select a derived face, physical wall, or canonical junction to inspect it.</div>
           <form id="selection-form" hidden></form>
         </section>
       </aside>
@@ -195,6 +201,6 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <script type="module" src="app.js?v=20260914-hardening1"></script>
+    <script type="module" src="app.js?v=20260915-a26"></script>
   </body>
 </html>
