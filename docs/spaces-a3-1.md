@@ -1,6 +1,6 @@
 # A3.1 persistent semantic spaces
 
-A3.1 introduces stable semantic identities that can be bound to A2.4-derived faces. It deliberately does not map the Option-3 rooms; the normal baseline keeps `spaces.status` as `deferred` until A3.2.
+A3.1 introduced stable semantic identities that can be bound to A2.4-derived faces. At that checkpoint it deliberately did not map the Option-3 rooms; A3.2 now supplies the separate curated baseline mapping.
 
 ## Model boundary
 

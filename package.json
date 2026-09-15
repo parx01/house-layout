@@ -7,6 +7,8 @@
     "build": "tsc -p tsconfig.build.json",
     "diagnostic:topology-overlay": "npm run build --silent && node scripts/write-option3-topology-overlay.mjs",
     "diagnostic:topology-overlay:check": "npm run build --silent && node scripts/write-option3-topology-overlay.mjs --check",
+    "diagnostic:semantic-spaces": "npm run build --silent && node scripts/write-option3-semantic-artifacts.mjs",
+    "diagnostic:semantic-spaces:check": "npm run build --silent && node scripts/write-option3-semantic-artifacts.mjs --check",
     "test": "vitest run",
     "typecheck": "tsc -p tsconfig.json --noEmit"
   },

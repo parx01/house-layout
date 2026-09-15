@@ -39,15 +39,6 @@ function projectWithTestSpace() {
 }
 
 describe("A3.1 persistent semantic spaces", () => {
-  it("keeps the normal Option-3 baseline unmapped and deferred for A3.2", () => {
-    expect(createOption3ProjectV2().spaces).toEqual({
-      status: "deferred",
-      targetStage: "A2",
-      modelVersion: null,
-      data: null,
-    });
-  });
-
   it("keeps persistent SpaceId distinct from derived FaceId", () => {
     const model = validateSemanticSpacesV1(syntheticSpaces(), twoRoomSharedWallTopology());
     expect(model.spaces[0]!.id).toBe("s-west");
@@ -125,6 +116,7 @@ describe("A3.1 persistent semantic spaces", () => {
   it("migrates revision-3 files while preserving their deferred spaces meaning", () => {
     const revision3 = structuredClone(createOption3ProjectV2()) as any;
     revision3.schemaRevision = 3;
+    revision3.spaces = { status: "deferred", targetStage: "A2", modelVersion: null, data: null };
     const migrated = parseProjectJson(JSON.stringify(revision3));
     expect(migrated.schemaRevision).toBe(5);
     expect(migrated.spaces).toEqual({ status: "deferred", targetStage: "A2", modelVersion: null, data: null });

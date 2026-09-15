@@ -1,0 +1,220 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 14986 24130" role="img" aria-labelledby="title description">
+  <title id="title">Option-3 A3.2 semantic spaces over fixed reference</title>
+  <desc id="description">Development diagnostic showing all 13 curated semantic SpaceId to derived FaceId bindings over the preserved Option-3 reference.</desc>
+  <rect width="100%" height="100%" fill="#ffffff" />
+  <image href="../assets/option-3-reference.png" width="14986" height="24130" preserveAspectRatio="none" opacity="0.55" />
+  <g opacity="0.24">
+    <polygon class="semantic-face" data-space-id="s-dress-2" data-face-id="f-07944bbfa1fe0b50" points="9299,7909.5 7495.5,7909.5 7495.5,6080.35 9299,6080.35" fill="#b49ad9" />
+    <polygon class="semantic-face" data-space-id="s-dress-1" data-face-id="f-25299ab9d0600da6" points="7495.5,7909.5 5701,7909.5 5701,6080.35 7495.5,6080.35" fill="#b49ad9" />
+    <polygon class="semantic-face" data-space-id="s-toilet-2" data-face-id="f-41bc3b811ac8bc6a" points="7495.5,3165.7 9299,3165.7 9299,6080.35 7495.5,6080.35" fill="#65c18c" />
+    <polygon class="semantic-face" data-space-id="s-toilet-1" data-face-id="f-4500a68c39844fc4" points="5701,3165.7 7495.5,3165.7 7495.5,6080.35 5701,6080.35" fill="#65c18c" />
+    <polygon class="semantic-face" data-space-id="s-bedroom-2" data-face-id="f-46f1f10484862bb1" points="13434.3,3165.7 13434.3,7909.5 9299,7909.5 9299,6080.35 9299,3165.7" fill="#5aa9e6" />
+    <polygon class="semantic-face" data-space-id="s-staircase" data-face-id="f-5bd20450438f7e84" points="4788.5,14126.5 4788.5,16050 1565.7,16050 1565.7,12945.5 4788.5,12945.5" fill="#f4a261" />
+    <polygon class="semantic-face" data-space-id="s-kitchen" data-face-id="f-995c81a969eb9c62" points="4788.5,9547.8 4788.5,12945.5 1565.7,12945.5 1565.7,9547.8" fill="#65c18c" />
+    <polygon class="semantic-face" data-space-id="s-guest-bedroom" data-face-id="f-9b08821b6b5e1967" points="13434.3,14126.5 13434.3,18870 9893.9,18870 9893.9,15650.5 9893.9,14126.5" fill="#5aa9e6" />
+    <polygon class="semantic-face" data-space-id="s-living-room" data-face-id="f-b90cdc1e2457fadd" points="4788.5,16050 4788.5,14126.5 8255.6,14126.5 8255.6,15650.5 8255.6,18870 4788.5,18870" fill="#5aa9e6" />
+    <polygon class="semantic-face" data-space-id="s-lobby-dining-puja" data-face-id="f-c26ea4cfc8e5967d" points="13434.3,7909.5 13434.3,14126.5 9893.9,14126.5 8255.6,14126.5 4788.5,14126.5 4788.5,12945.5 4788.5,9547.8 1565.7,9547.8 1565.7,7909.5 5701,7909.5 7495.5,7909.5 9299,7909.5" fill="#e9c46a" />
+    <polygon class="semantic-face" data-space-id="s-wash-area" data-face-id="f-c4be109283d52551" points="8255.6,14126.5 9893.9,14126.5 9893.9,15650.5 8255.6,15650.5" fill="#65c18c" />
+    <polygon class="semantic-face" data-space-id="s-toilet-3" data-face-id="f-ce4b77ad898b046f" points="9893.9,18870 8255.6,18870 8255.6,15650.5 9893.9,15650.5" fill="#65c18c" />
+    <polygon class="semantic-face" data-space-id="s-bedroom-1" data-face-id="f-dde2d722d470e5e8" points="1565.7,7909.5 1565.7,3165.7 5701,3165.7 5701,6080.35 5701,7909.5" fill="#5aa9e6" />
+  </g>
+  <g fill="none" stroke="#00a7e1" stroke-linecap="square" opacity="0.24">
+    <line class="wall-band" data-wall-id="w-option3-central-front-1" x1="13434.3" y1="7909.5" x2="13434.3" y2="14126.5" stroke-width="228.6" />
+    <line class="wall-band" data-wall-id="w-option3-central-front-2" x1="13434.3" y1="14126.5" x2="13434.3" y2="18870" stroke-width="228.6" />
+    <line class="wall-band" data-wall-id="w-option3-central-step-2" x1="4788.5" y1="14126.5" x2="4788.5" y2="16050" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-central-step-3" x1="4788.5" y1="16050" x2="4788.5" y2="18870" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-front-partition-left-1" x1="4788.5" y1="14126.5" x2="8255.6" y2="14126.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-front-partition-left-3" x1="4788.5" y1="18870" x2="8255.6" y2="18870" stroke-width="228.6" />
+    <line class="wall-band" data-wall-id="w-option3-front-partition-right-1" x1="8255.6" y1="14126.5" x2="9893.9" y2="14126.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-front-partition-right-2" x1="9893.9" y1="14126.5" x2="13434.3" y2="14126.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-front-partition-right-3" x1="8255.6" y1="18870" x2="9893.9" y2="18870" stroke-width="228.6" />
+    <line class="wall-band" data-wall-id="w-option3-front-partition-right-4" x1="9893.9" y1="18870" x2="13434.3" y2="18870" stroke-width="228.6" />
+    <line class="wall-band" data-wall-id="w-option3-front-wet-split-1" x1="8255.6" y1="14126.5" x2="8255.6" y2="15650.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-front-wet-split-2" x1="8255.6" y1="15650.5" x2="8255.6" y2="18870" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-front-wet-split-3" x1="9893.9" y1="14126.5" x2="9893.9" y2="15650.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-front-wet-split-4" x1="9893.9" y1="15650.5" x2="9893.9" y2="18870" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-front-wet-split-5" x1="8255.6" y1="15650.5" x2="9893.9" y2="15650.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-kitchen-stair-1" x1="4788.5" y1="9547.8" x2="4788.5" y2="12945.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-kitchen-stair-2" x1="4788.5" y1="12945.5" x2="4788.5" y2="14126.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-kitchen-stair-3" x1="1565.7" y1="9547.8" x2="1565.7" y2="12945.5" stroke-width="228.6" />
+    <line class="wall-band" data-wall-id="w-option3-kitchen-stair-4" x1="1565.7" y1="12945.5" x2="1565.7" y2="16050" stroke-width="228.6" />
+    <line class="wall-band" data-wall-id="w-option3-kitchen-stair-5" x1="1565.7" y1="12945.5" x2="4788.5" y2="12945.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-left-outer-1" x1="1565.7" y1="3165.7" x2="1565.7" y2="7909.5" stroke-width="228.6" />
+    <line class="wall-band" data-wall-id="w-option3-puja-kitchen-1" x1="1565.7" y1="7909.5" x2="1565.7" y2="9547.8" stroke-width="228.6" />
+    <line class="wall-band" data-wall-id="w-option3-puja-kitchen-3" x1="1565.7" y1="9547.8" x2="4788.5" y2="9547.8" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-rear-central-1" x1="13434.3" y1="3165.7" x2="13434.3" y2="7909.5" stroke-width="228.6" />
+    <line class="wall-band" data-wall-id="w-option3-rear-partition-left-1" x1="1565.7" y1="7909.5" x2="5701" y2="7909.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-rear-partition-left-3" x1="1565.7" y1="3165.7" x2="5701" y2="3165.7" stroke-width="228.6" />
+    <line class="wall-band" data-wall-id="w-option3-rear-partition-middle-1" x1="5701" y1="7909.5" x2="7495.5" y2="7909.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-rear-partition-middle-3" x1="5701" y1="3165.7" x2="7495.5" y2="3165.7" stroke-width="228.6" />
+    <line class="wall-band" data-wall-id="w-option3-rear-partition-right-1" x1="7495.5" y1="7909.5" x2="9299" y2="7909.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-rear-partition-right-2" x1="9299" y1="7909.5" x2="13434.3" y2="7909.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-rear-partition-right-3" x1="7495.5" y1="3165.7" x2="9299" y2="3165.7" stroke-width="228.6" />
+    <line class="wall-band" data-wall-id="w-option3-rear-partition-right-4" x1="9299" y1="3165.7" x2="13434.3" y2="3165.7" stroke-width="228.6" />
+    <line class="wall-band" data-wall-id="w-option3-rear-wet-split-1" x1="5701" y1="3165.7" x2="5701" y2="6080.35" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-rear-wet-split-2" x1="5701" y1="6080.35" x2="5701" y2="7909.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-rear-wet-split-3" x1="7495.5" y1="3165.7" x2="7495.5" y2="6080.35" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-rear-wet-split-4" x1="7495.5" y1="6080.35" x2="7495.5" y2="7909.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-rear-wet-split-5" x1="9299" y1="3165.7" x2="9299" y2="6080.35" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-rear-wet-split-6" x1="9299" y1="6080.35" x2="9299" y2="7909.5" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-rear-wet-split-7" x1="5701" y1="6080.35" x2="7495.5" y2="6080.35" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-rear-wet-split-8" x1="7495.5" y1="6080.35" x2="9299" y2="6080.35" stroke-width="114.3" />
+    <line class="wall-band" data-wall-id="w-option3-stair-outer-1" x1="1565.7" y1="16050" x2="4788.5" y2="16050" stroke-width="228.6" />
+  </g>
+  <g fill="none" stroke="#d7263d" stroke-width="30" stroke-linecap="round">
+    <line class="wall-centre" data-wall-id="w-option3-central-front-1" x1="13434.3" y1="7909.5" x2="13434.3" y2="14126.5" />
+    <line class="wall-centre" data-wall-id="w-option3-central-front-2" x1="13434.3" y1="14126.5" x2="13434.3" y2="18870" />
+    <line class="wall-centre" data-wall-id="w-option3-central-step-2" x1="4788.5" y1="14126.5" x2="4788.5" y2="16050" />
+    <line class="wall-centre" data-wall-id="w-option3-central-step-3" x1="4788.5" y1="16050" x2="4788.5" y2="18870" />
+    <line class="wall-centre" data-wall-id="w-option3-front-partition-left-1" x1="4788.5" y1="14126.5" x2="8255.6" y2="14126.5" />
+    <line class="wall-centre" data-wall-id="w-option3-front-partition-left-3" x1="4788.5" y1="18870" x2="8255.6" y2="18870" />
+    <line class="wall-centre" data-wall-id="w-option3-front-partition-right-1" x1="8255.6" y1="14126.5" x2="9893.9" y2="14126.5" />
+    <line class="wall-centre" data-wall-id="w-option3-front-partition-right-2" x1="9893.9" y1="14126.5" x2="13434.3" y2="14126.5" />
+    <line class="wall-centre" data-wall-id="w-option3-front-partition-right-3" x1="8255.6" y1="18870" x2="9893.9" y2="18870" />
+    <line class="wall-centre" data-wall-id="w-option3-front-partition-right-4" x1="9893.9" y1="18870" x2="13434.3" y2="18870" />
+    <line class="wall-centre" data-wall-id="w-option3-front-wet-split-1" x1="8255.6" y1="14126.5" x2="8255.6" y2="15650.5" />
+    <line class="wall-centre" data-wall-id="w-option3-front-wet-split-2" x1="8255.6" y1="15650.5" x2="8255.6" y2="18870" />
+    <line class="wall-centre" data-wall-id="w-option3-front-wet-split-3" x1="9893.9" y1="14126.5" x2="9893.9" y2="15650.5" />
+    <line class="wall-centre" data-wall-id="w-option3-front-wet-split-4" x1="9893.9" y1="15650.5" x2="9893.9" y2="18870" />
+    <line class="wall-centre" data-wall-id="w-option3-front-wet-split-5" x1="8255.6" y1="15650.5" x2="9893.9" y2="15650.5" />
+    <line class="wall-centre" data-wall-id="w-option3-kitchen-stair-1" x1="4788.5" y1="9547.8" x2="4788.5" y2="12945.5" />
+    <line class="wall-centre" data-wall-id="w-option3-kitchen-stair-2" x1="4788.5" y1="12945.5" x2="4788.5" y2="14126.5" />
+    <line class="wall-centre" data-wall-id="w-option3-kitchen-stair-3" x1="1565.7" y1="9547.8" x2="1565.7" y2="12945.5" />
+    <line class="wall-centre" data-wall-id="w-option3-kitchen-stair-4" x1="1565.7" y1="12945.5" x2="1565.7" y2="16050" />
+    <line class="wall-centre" data-wall-id="w-option3-kitchen-stair-5" x1="1565.7" y1="12945.5" x2="4788.5" y2="12945.5" />
+    <line class="wall-centre" data-wall-id="w-option3-left-outer-1" x1="1565.7" y1="3165.7" x2="1565.7" y2="7909.5" />
+    <line class="wall-centre" data-wall-id="w-option3-puja-kitchen-1" x1="1565.7" y1="7909.5" x2="1565.7" y2="9547.8" />
+    <line class="wall-centre" data-wall-id="w-option3-puja-kitchen-3" x1="1565.7" y1="9547.8" x2="4788.5" y2="9547.8" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-central-1" x1="13434.3" y1="3165.7" x2="13434.3" y2="7909.5" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-partition-left-1" x1="1565.7" y1="7909.5" x2="5701" y2="7909.5" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-partition-left-3" x1="1565.7" y1="3165.7" x2="5701" y2="3165.7" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-partition-middle-1" x1="5701" y1="7909.5" x2="7495.5" y2="7909.5" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-partition-middle-3" x1="5701" y1="3165.7" x2="7495.5" y2="3165.7" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-partition-right-1" x1="7495.5" y1="7909.5" x2="9299" y2="7909.5" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-partition-right-2" x1="9299" y1="7909.5" x2="13434.3" y2="7909.5" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-partition-right-3" x1="7495.5" y1="3165.7" x2="9299" y2="3165.7" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-partition-right-4" x1="9299" y1="3165.7" x2="13434.3" y2="3165.7" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-wet-split-1" x1="5701" y1="3165.7" x2="5701" y2="6080.35" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-wet-split-2" x1="5701" y1="6080.35" x2="5701" y2="7909.5" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-wet-split-3" x1="7495.5" y1="3165.7" x2="7495.5" y2="6080.35" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-wet-split-4" x1="7495.5" y1="6080.35" x2="7495.5" y2="7909.5" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-wet-split-5" x1="9299" y1="3165.7" x2="9299" y2="6080.35" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-wet-split-6" x1="9299" y1="6080.35" x2="9299" y2="7909.5" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-wet-split-7" x1="5701" y1="6080.35" x2="7495.5" y2="6080.35" />
+    <line class="wall-centre" data-wall-id="w-option3-rear-wet-split-8" x1="7495.5" y1="6080.35" x2="9299" y2="6080.35" />
+    <line class="wall-centre" data-wall-id="w-option3-stair-outer-1" x1="1565.7" y1="16050" x2="4788.5" y2="16050" />
+  </g>
+  <g>
+    <g class="semantic-label" data-space-id="s-bedroom-1" data-face-id="f-dde2d722d470e5e8" transform="translate(3633.35 4623.025)">
+      <rect x="-850" y="-380" width="1700" height="760" rx="70" fill="#ffffff" fill-opacity="0.92" stroke="#5aa9e6" stroke-width="18" />
+      <text text-anchor="middle" font-family="Arial, sans-serif" fill="#17202a">
+        <tspan class="semantic-name" x="0" y="-145" font-size="210" font-weight="700">Bedroom 1</tspan>
+        <tspan class="semantic-id" x="0" y="90" font-size="145">s-bedroom-1</tspan>
+        <tspan class="face-id" x="0" y="280" font-size="100">f-dde2d722d470e5e8 · 211.2 sq ft</tspan>
+      </text>
+    </g>
+    <g class="semantic-label" data-space-id="s-toilet-1" data-face-id="f-4500a68c39844fc4" transform="translate(6598.25 4623.025)">
+      <rect x="-850" y="-380" width="1700" height="760" rx="70" fill="#ffffff" fill-opacity="0.92" stroke="#65c18c" stroke-width="18" />
+      <text text-anchor="middle" font-family="Arial, sans-serif" fill="#17202a">
+        <tspan class="semantic-name" x="0" y="-145" font-size="210" font-weight="700">Toilet 1</tspan>
+        <tspan class="semantic-id" x="0" y="90" font-size="145">s-toilet-1</tspan>
+        <tspan class="face-id" x="0" y="280" font-size="100">f-4500a68c39844fc4 · 56.3 sq ft</tspan>
+      </text>
+    </g>
+    <g class="semantic-label" data-space-id="s-dress-1" data-face-id="f-25299ab9d0600da6" transform="translate(6598.25 6994.925)">
+      <rect x="-850" y="-380" width="1700" height="760" rx="70" fill="#ffffff" fill-opacity="0.92" stroke="#b49ad9" stroke-width="18" />
+      <text text-anchor="middle" font-family="Arial, sans-serif" fill="#17202a">
+        <tspan class="semantic-name" x="0" y="-145" font-size="210" font-weight="700">Dress 1</tspan>
+        <tspan class="semantic-id" x="0" y="90" font-size="145">s-dress-1</tspan>
+        <tspan class="face-id" x="0" y="280" font-size="100">f-25299ab9d0600da6 · 35.3 sq ft</tspan>
+      </text>
+    </g>
+    <g class="semantic-label" data-space-id="s-toilet-2" data-face-id="f-41bc3b811ac8bc6a" transform="translate(8397.25 4623.025)">
+      <rect x="-850" y="-380" width="1700" height="760" rx="70" fill="#ffffff" fill-opacity="0.92" stroke="#65c18c" stroke-width="18" />
+      <text text-anchor="middle" font-family="Arial, sans-serif" fill="#17202a">
+        <tspan class="semantic-name" x="0" y="-145" font-size="210" font-weight="700">Toilet 2</tspan>
+        <tspan class="semantic-id" x="0" y="90" font-size="145">s-toilet-2</tspan>
+        <tspan class="face-id" x="0" y="280" font-size="100">f-41bc3b811ac8bc6a · 56.6 sq ft</tspan>
+      </text>
+    </g>
+    <g class="semantic-label" data-space-id="s-dress-2" data-face-id="f-07944bbfa1fe0b50" transform="translate(8397.25 6994.925)">
+      <rect x="-850" y="-380" width="1700" height="760" rx="70" fill="#ffffff" fill-opacity="0.92" stroke="#b49ad9" stroke-width="18" />
+      <text text-anchor="middle" font-family="Arial, sans-serif" fill="#17202a">
+        <tspan class="semantic-name" x="0" y="-145" font-size="210" font-weight="700">Dress 2</tspan>
+        <tspan class="semantic-id" x="0" y="90" font-size="145">s-dress-2</tspan>
+        <tspan class="face-id" x="0" y="280" font-size="100">f-07944bbfa1fe0b50 · 35.5 sq ft</tspan>
+      </text>
+    </g>
+    <g class="semantic-label" data-space-id="s-bedroom-2" data-face-id="f-46f1f10484862bb1" transform="translate(11366.65 4623.025)">
+      <rect x="-850" y="-380" width="1700" height="760" rx="70" fill="#ffffff" fill-opacity="0.92" stroke="#5aa9e6" stroke-width="18" />
+      <text text-anchor="middle" font-family="Arial, sans-serif" fill="#17202a">
+        <tspan class="semantic-name" x="0" y="-145" font-size="210" font-weight="700">Bedroom 2</tspan>
+        <tspan class="semantic-id" x="0" y="90" font-size="145">s-bedroom-2</tspan>
+        <tspan class="face-id" x="0" y="280" font-size="100">f-46f1f10484862bb1 · 211.2 sq ft</tspan>
+      </text>
+    </g>
+    <g class="semantic-label" data-space-id="s-lobby-dining-puja" data-face-id="f-c26ea4cfc8e5967d" transform="translate(9100 11246.65)">
+      <rect x="-1860" y="-380" width="3720" height="760" rx="70" fill="#ffffff" fill-opacity="0.92" stroke="#e9c46a" stroke-width="18" />
+      <text text-anchor="middle" font-family="Arial, sans-serif" fill="#17202a">
+        <tspan class="semantic-name" x="0" y="-145" font-size="210" font-weight="700">Lobby / Dining with Puja Alcove</tspan>
+        <tspan class="semantic-id" x="0" y="90" font-size="145">s-lobby-dining-puja</tspan>
+        <tspan class="face-id" x="0" y="280" font-size="100">f-c26ea4cfc8e5967d · 635.4 sq ft</tspan>
+      </text>
+    </g>
+    <g class="semantic-label" data-space-id="s-kitchen" data-face-id="f-995c81a969eb9c62" transform="translate(3177.1 11246.65)">
+      <rect x="-850" y="-380" width="1700" height="760" rx="70" fill="#ffffff" fill-opacity="0.92" stroke="#65c18c" stroke-width="18" />
+      <text text-anchor="middle" font-family="Arial, sans-serif" fill="#17202a">
+        <tspan class="semantic-name" x="0" y="-145" font-size="210" font-weight="700">Kitchen</tspan>
+        <tspan class="semantic-id" x="0" y="90" font-size="145">s-kitchen</tspan>
+        <tspan class="face-id" x="0" y="280" font-size="100">f-995c81a969eb9c62 · 117.9 sq ft</tspan>
+      </text>
+    </g>
+    <g class="semantic-label" data-space-id="s-staircase" data-face-id="f-5bd20450438f7e84" transform="translate(3177.1 15088.25)">
+      <rect x="-850" y="-380" width="1700" height="760" rx="70" fill="#ffffff" fill-opacity="0.92" stroke="#f4a261" stroke-width="18" />
+      <text text-anchor="middle" font-family="Arial, sans-serif" fill="#17202a">
+        <tspan class="semantic-name" x="0" y="-145" font-size="210" font-weight="700">Staircase</tspan>
+        <tspan class="semantic-id" x="0" y="90" font-size="145">s-staircase</tspan>
+        <tspan class="face-id" x="0" y="280" font-size="100">f-5bd20450438f7e84 · 107.7 sq ft</tspan>
+      </text>
+    </g>
+    <g class="semantic-label" data-space-id="s-living-room" data-face-id="f-b90cdc1e2457fadd" transform="translate(6522.05 17460)">
+      <rect x="-850" y="-380" width="1700" height="760" rx="70" fill="#ffffff" fill-opacity="0.92" stroke="#5aa9e6" stroke-width="18" />
+      <text text-anchor="middle" font-family="Arial, sans-serif" fill="#17202a">
+        <tspan class="semantic-name" x="0" y="-145" font-size="210" font-weight="700">Living Room</tspan>
+        <tspan class="semantic-id" x="0" y="90" font-size="145">s-living-room</tspan>
+        <tspan class="face-id" x="0" y="280" font-size="100">f-b90cdc1e2457fadd · 177.0 sq ft</tspan>
+      </text>
+    </g>
+    <g class="semantic-label" data-space-id="s-wash-area" data-face-id="f-c4be109283d52551" transform="translate(9074.75 14888.5)">
+      <rect x="-850" y="-380" width="1700" height="760" rx="70" fill="#ffffff" fill-opacity="0.92" stroke="#65c18c" stroke-width="18" />
+      <text text-anchor="middle" font-family="Arial, sans-serif" fill="#17202a">
+        <tspan class="semantic-name" x="0" y="-145" font-size="210" font-weight="700">Wash Area</tspan>
+        <tspan class="semantic-id" x="0" y="90" font-size="145">s-wash-area</tspan>
+        <tspan class="face-id" x="0" y="280" font-size="100">f-c4be109283d52551 · 26.9 sq ft</tspan>
+      </text>
+    </g>
+    <g class="semantic-label" data-space-id="s-toilet-3" data-face-id="f-ce4b77ad898b046f" transform="translate(9074.75 17260.25)">
+      <rect x="-850" y="-380" width="1700" height="760" rx="70" fill="#ffffff" fill-opacity="0.92" stroke="#65c18c" stroke-width="18" />
+      <text text-anchor="middle" font-family="Arial, sans-serif" fill="#17202a">
+        <tspan class="semantic-name" x="0" y="-145" font-size="210" font-weight="700">Toilet 3</tspan>
+        <tspan class="semantic-id" x="0" y="90" font-size="145">s-toilet-3</tspan>
+        <tspan class="face-id" x="0" y="280" font-size="100">f-ce4b77ad898b046f · 56.8 sq ft</tspan>
+      </text>
+    </g>
+    <g class="semantic-label" data-space-id="s-guest-bedroom" data-face-id="f-9b08821b6b5e1967" transform="translate(11664.099999999999 17260.25)">
+      <rect x="-850" y="-380" width="1700" height="760" rx="70" fill="#ffffff" fill-opacity="0.92" stroke="#5aa9e6" stroke-width="18" />
+      <text text-anchor="middle" font-family="Arial, sans-serif" fill="#17202a">
+        <tspan class="semantic-name" x="0" y="-145" font-size="210" font-weight="700">Guest Bedroom</tspan>
+        <tspan class="semantic-id" x="0" y="90" font-size="145">s-guest-bedroom</tspan>
+        <tspan class="face-id" x="0" y="280" font-size="100">f-9b08821b6b5e1967 · 180.8 sq ft</tspan>
+      </text>
+    </g>
+  </g>
+  <g transform="translate(1600 20600)" font-family="Arial, sans-serif" fill="#17202a">
+    <rect x="-150" y="-420" width="12100" height="1020" rx="100" fill="#ffffff" fill-opacity="0.93" stroke="#17202a" stroke-width="22" />
+    <text x="100" y="-150" font-size="190" font-weight="700">A3.2 — 13 explicit semantic bindings</text>
+    <text x="100" y="110" font-size="130">Puja is an open alcove inside the Lobby / Dining face; it is not a fourteenth face.</text>
+    <text x="100" y="350" font-size="120">Areas are A2.4 centre-line polygon areas, not clear-room or coverage areas.</text>
+  </g>
+</svg>

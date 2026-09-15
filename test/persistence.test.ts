@@ -78,6 +78,7 @@ describe("ProjectV2 validation and legacy recovery", () => {
     expect(recovered.legacyEditorState.rooms).toEqual(OPTION_3_V1_RECOVERY_STATE.rooms);
     expect(recovered.legacyEditorState.site).toEqual({ width: 14_986, depth: 24_130, coverageLimit: 0.66 });
     expect(recovered.topology.status).toBe("active");
+    expect(recovered.spaces.status).toBe("deferred");
     expect(projectToLegacyEditorState(recovered).rooms).toEqual(OPTION_3_V1_RECOVERY_STATE.rooms);
   });
 });

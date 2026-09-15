@@ -139,6 +139,7 @@ describe("A2.6.1 authority transition and retained topology integrity", () => {
     const activeRevision2 = structuredClone(createOption3ProjectV2()) as any;
     activeRevision2.schemaRevision = 2;
     activeRevision2.building.status = "deferredToTopologyA2";
+    activeRevision2.spaces = deferredTopology();
     activeRevision2.legacyEditorState.site.width = OPTION_3_V1_RECOVERY_STATE.site.width;
     activeRevision2.legacyEditorState.site.depth = OPTION_3_V1_RECOVERY_STATE.site.depth;
     const active = parseProjectJson(JSON.stringify(activeRevision2));

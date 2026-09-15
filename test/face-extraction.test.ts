@@ -237,9 +237,11 @@ describe("A2.4 curated Option-3 faces", () => {
     for (const face of first.faces) assertCanonicalFace(source, face);
   });
 
-  it("keeps faces derived while ProjectV2 spaces remain deferred", () => {
+  it("keeps face geometry derived when ProjectV2 carries semantic bindings", () => {
     const project = createOption3ProjectV2();
-    expect(project.spaces.status).toBe("deferred");
+    expect(project.spaces.status).toBe("active");
+    expect(JSON.stringify(project.spaces)).not.toContain("areaUm2");
+    expect(JSON.stringify(project.spaces)).not.toContain("vertices");
     expect(extractBoundedFaces(project.topology as TopologyV2)).toEqual(extractBoundedFaces(createOption3TopologyV2()));
   });
 });

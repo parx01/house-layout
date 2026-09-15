@@ -28,13 +28,15 @@ ProjectV2
 
 ## Schema-evolution policy
 
-`schemaVersion: 2` has an explicit `schemaRevision: 5`. Openings, dimensions, and site objects remain stable deferred envelopes with `status: "deferred"`, a target stage, and `modelVersion: null` / `data: null`. A2.1 activated the already-reserved topology key with a separately versioned and strictly validated canonical node/wall graph. A3.1 activated the already-reserved spaces key with a separately versioned semantic model while keeping the Option-3 baseline itself deferred until A3.2.
+`schemaVersion: 2` has an explicit `schemaRevision: 5`. Openings, dimensions, and site objects remain stable deferred envelopes with `status: "deferred"`, a target stage, and `modelVersion: null` / `data: null`. A2.1 activated the already-reserved topology key with a separately versioned and strictly validated canonical node/wall graph. A3.1 activated the already-reserved spaces key with a separately versioned semantic model; A3.2 now populates that model only for the untouched curated Option-3 baseline.
 
-A2.3.1 advanced revision 3 because `building.status` truthfully distinguishes `topologyActive` and `topologyDeferred`. Revision-2 saves migrate explicitly: the released curated A2.3 graph remains active, while deferred/empty topology remains non-active. Active topology is additionally checked against the known baseline legacy geometry and current property boundary. Geometry changes made through the legacy editor demote topology instead of silently retaining a stale graph.
+A2.3.1 advanced revision 3 because `building.status` truthfully distinguishes `topologyActive` and `topologyDeferred`. Revision-2 saves migrate explicitly: the released curated A2.3 graph remains active, while deferred/empty topology remains non-active. Its temporary equality-to-legacy authority rule was later superseded by A2.6.1; current protection comes from structural validation and site/band containment.
 
 A3.1 advanced to revision 4 rather than changing revision 3 in place. A revision-3 file is accepted only if its spaces slot has the historical deferred shape. Active semantic spaces require active topology and bind persistent `SpaceId` values to currently derived `FaceId` values without storing polygons or areas.
 
 A2.6.1 advances to revision 5 because canonical topology is now authoritative independently of `legacyEditorState`. Revision-4 files migrate explicitly. Current validation accepts any structurally valid, site-contained active topology, while the project-level A2.5 transaction preserves semantic bindings only when their derived face IDs survive. Legacy rectangles can differ without invalidating canonical topology.
+
+A3.2 does not change the schema or persist derived geometry. It activates 13 explicit SpaceId-to-FaceId bindings for a newly created untouched Option-3 baseline. Explicit V1 recovery—including the original V1 fixture—and arbitrary or edited migrations remain semantically deferred unless a mapping is already present and validates; no geometric remapping is attempted.
 
 The original A1 ProjectV2 documents had no `schemaRevision`, future-model slots, or road-width provenance. The loader recognizes exactly that frozen top-level shape and performs a one-way normalization to current revision 5 with deferred topology and spaces. Unknown fields and unknown explicit revisions remain errors. Automated coverage preserves an A1-shaped save, reloads it, verifies all deferred slots, and round-trips the normalized document.
 

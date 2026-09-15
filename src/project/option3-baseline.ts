@@ -2,6 +2,7 @@ import { createOption3Site } from "../core/site.js";
 import { legacyMmToUm, umToLegacyMm } from "../core/units.js";
 import type { LegacyEditorStateV1, ProjectV2 } from "./schema.js";
 import { legacyEditorGeometryEquals } from "./legacy-geometry.js";
+import { createOption3SemanticSpacesV1 } from "./option3-semantic-spaces.js";
 import { createOption3TopologyV2 } from "./option3-topology.js";
 
 export const OPTION_3_REFERENCE_SHA256 = "56dbc61d59013c5f5247af5f684059097bb233da960379551b78c58f7ef01a37";
@@ -31,11 +32,13 @@ export const OPTION_3_V1_RECOVERY_STATE: LegacyEditorStateV1 = {
   showLabels: true
 };
 
-export function createOption3ProjectV2(legacyState: LegacyEditorStateV1 = OPTION_3_V1_RECOVERY_STATE): ProjectV2 {
-  const hasCuratedTopology = isOption3BaselineLegacyGeometry(legacyState);
+export function createOption3ProjectV2(legacyState?: LegacyEditorStateV1): ProjectV2 {
+  const isUntouchedCuratedBaseline = legacyState === undefined;
+  const sourceLegacyState = legacyState ?? OPTION_3_V1_RECOVERY_STATE;
+  const hasCuratedTopology = isOption3BaselineLegacyGeometry(sourceLegacyState);
   const option3Site = createOption3Site();
-  const normalizedLegacyState = structuredClone(legacyState);
-  const hasKnownOption3Site = isKnownOption3LegacySite(legacyState);
+  const normalizedLegacyState = structuredClone(sourceLegacyState);
+  const hasKnownOption3Site = isKnownOption3LegacySite(sourceLegacyState);
   if (hasKnownOption3Site) {
     normalizedLegacyState.site.width = umToLegacyMm(option3Site.boundary.widthUm);
     normalizedLegacyState.site.depth = umToLegacyMm(option3Site.boundary.depthUm);
@@ -44,8 +47,8 @@ export function createOption3ProjectV2(legacyState: LegacyEditorStateV1 = OPTION
     ...option3Site,
     boundary: {
       ...option3Site.boundary,
-      widthUm: legacyMmToUm(legacyState.site.width),
-      depthUm: legacyMmToUm(legacyState.site.depth),
+      widthUm: legacyMmToUm(sourceLegacyState.site.width),
+      depthUm: legacyMmToUm(sourceLegacyState.site.depth),
     },
   };
   return {
@@ -67,7 +70,9 @@ export function createOption3ProjectV2(legacyState: LegacyEditorStateV1 = OPTION
       coverageStatus: "deferredToExteriorEnvelopeA4",
     },
     topology: hasCuratedTopology ? createOption3TopologyV2() : deferredModel("A2"),
-    spaces: deferredModel("A2"),
+    spaces: hasCuratedTopology && isUntouchedCuratedBaseline
+      ? createOption3SemanticSpacesV1()
+      : deferredModel("A2"),
     openings: deferredModel("postA2"),
     dimensions: deferredModel("A2"),
     siteObjects: deferredModel("postA2"),
