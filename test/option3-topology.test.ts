@@ -145,12 +145,14 @@ describe("A2.3 curated Option-3 topology", () => {
     const recovered = parseProjectJson(serializeProject(project));
     expect(recovered.topology).toEqual(createOption3TopologyV2());
     expect(recovered.topology.status).toBe("active");
-    expect(recovered.legacyEditorState).toEqual(OPTION_3_V1_RECOVERY_STATE);
+    expect(recovered.legacyEditorState.rooms).toEqual(OPTION_3_V1_RECOVERY_STATE.rooms);
+    expect(recovered.legacyEditorState.site).toEqual({ width: 14_986, depth: 24_130, coverageLimit: 0.66 });
   });
 
   it("keeps V1 recovery while activating the curated topology", () => {
     const recovered = parseProjectJson(JSON.stringify({ version: 1, ...OPTION_3_V1_RECOVERY_STATE }));
     expect(recovered.topology).toEqual(createOption3TopologyV2());
-    expect(recovered.legacyEditorState).toEqual(OPTION_3_V1_RECOVERY_STATE);
+    expect(recovered.legacyEditorState.rooms).toEqual(OPTION_3_V1_RECOVERY_STATE.rooms);
+    expect(recovered.legacyEditorState.site).toEqual({ width: 14_986, depth: 24_130, coverageLimit: 0.66 });
   });
 });

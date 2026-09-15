@@ -1,7 +1,5 @@
 import { describe, expect, it } from "vitest";
 import { coordinateUm, lengthUm } from "../src/core/units.js";
-import { parseProjectJson, serializeProject } from "../src/persistence/project-storage.js";
-import { createOption3ProjectV2 } from "../src/project/option3-baseline.js";
 import {
   createEmptyTopologyV2,
   getConnectedWallIds,
@@ -269,10 +267,9 @@ describe("A2.2 splitting, combined graph, and persistence", () => {
     expect(validateTopologyV2(graph)).toEqual(graph);
   });
 
-  it("survives ProjectV2 serialization and load after intersection splitting", () => {
+  it("survives a JSON round-trip after intersection splitting", () => {
     const graph = insert(singleHorizontalWall(), proposal(5_000_000, -4_000_000, 5_000_000, 4_000_000), "persist").topology;
-    const project = { ...createOption3ProjectV2(), topology: graph };
-    const recovered = parseProjectJson(serializeProject(project));
-    expect(recovered.topology).toEqual(graph);
+    const recovered = validateTopologyV2(JSON.parse(JSON.stringify(graph)));
+    expect(recovered).toEqual(graph);
   });
 });

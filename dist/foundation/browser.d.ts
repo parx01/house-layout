@@ -3,6 +3,7 @@ export * from "./core/site.js";
 export * from "./core/units.js";
 export * from "./persistence/project-storage.js";
 export * from "./project/option3-baseline.js";
+export * from "./project/legacy-geometry.js";
 export * from "./project/schema.js";
 export * from "./project/validation.js";
 export * from "./topology/model.js";

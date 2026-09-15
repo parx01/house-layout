@@ -1,5 +1,6 @@
 import { legacyMmToUm, umToLegacyMm } from "../core/units.js";
 import { createOption3ProjectV2 } from "../project/option3-baseline.js";
+import { legacyEditorGeometryEquals } from "../project/legacy-geometry.js";
 import { detectProjectVersion, normalizeProjectV2, ProjectValidationError, UnsupportedProjectVersionError, validateLegacyProjectEnvelopeV1, validateProjectV2, } from "../project/validation.js";
 export const PROJECT_V2_STORAGE_KEY = "plan66-option3-v2";
 export const LEGACY_V1_STORAGE_KEY = "plan66-option3-v1";
@@ -18,7 +19,7 @@ export function loadProjectValue(value) {
     if (version === 2)
         return normalizeProjectV2(value);
     const legacy = validateLegacyProjectEnvelopeV1(value);
-    return createOption3ProjectV2(legacy);
+    return validateProjectV2(createOption3ProjectV2(legacy));
 }
 export function serializeProject(project) {
     return JSON.stringify(validateProjectV2(project), null, 2);
@@ -34,18 +35,36 @@ export function projectToLegacyEditorState(project) {
     return state;
 }
 export function updateProjectFromLegacyEditorState(project, legacyState) {
-    const next = structuredClone(validateProjectV2(project));
+    const current = validateProjectV2(project);
     const validatedLegacy = validateLegacyProjectEnvelopeV1(legacyState);
-    next.site = {
-        ...next.site,
-        boundary: {
-            ...next.site.boundary,
-            widthUm: legacyMmToUm(validatedLegacy.site.width),
-            depthUm: legacyMmToUm(validatedLegacy.site.depth),
+    const geometryChanged = !legacyEditorGeometryEquals(current.legacyEditorState, validatedLegacy);
+    const topology = geometryChanged ? deferredTopology() : current.topology;
+    const next = {
+        ...structuredClone(current),
+        site: {
+            ...current.site,
+            boundary: {
+                ...current.site.boundary,
+                widthUm: legacyMmToUm(validatedLegacy.site.width),
+                depthUm: legacyMmToUm(validatedLegacy.site.depth),
+            },
         },
+        building: {
+            ...current.building,
+            status: topology.status === "active" ? "topologyActive" : "topologyDeferred",
+        },
+        topology,
+        legacyEditorState: structuredClone(validatedLegacy),
     };
-    next.legacyEditorState = structuredClone(validatedLegacy);
     return validateProjectV2(next);
+}
+function deferredTopology() {
+    return {
+        status: "deferred",
+        targetStage: "A2",
+        modelVersion: null,
+        data: null,
+    };
 }
 export function readProjectFromStorage(storage) {
     const current = storage.getItem(PROJECT_V2_STORAGE_KEY);

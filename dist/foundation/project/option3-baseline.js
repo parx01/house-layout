@@ -1,4 +1,6 @@
 import { createOption3Site } from "../core/site.js";
+import { legacyMmToUm, umToLegacyMm } from "../core/units.js";
+import { legacyEditorGeometryEquals } from "./legacy-geometry.js";
 import { createOption3TopologyV2 } from "./option3-topology.js";
 export const OPTION_3_REFERENCE_SHA256 = "56dbc61d59013c5f5247af5f684059097bb233da960379551b78c58f7ef01a37";
 export const OPTION_3_V1_RECOVERY_STATE = {
@@ -26,9 +28,25 @@ export const OPTION_3_V1_RECOVERY_STATE = {
     showLabels: true
 };
 export function createOption3ProjectV2(legacyState = OPTION_3_V1_RECOVERY_STATE) {
+    const hasCuratedTopology = isOption3BaselineLegacyGeometry(legacyState);
+    const option3Site = createOption3Site();
+    const normalizedLegacyState = structuredClone(legacyState);
+    const hasKnownOption3Site = isKnownOption3LegacySite(legacyState);
+    if (hasKnownOption3Site) {
+        normalizedLegacyState.site.width = umToLegacyMm(option3Site.boundary.widthUm);
+        normalizedLegacyState.site.depth = umToLegacyMm(option3Site.boundary.depthUm);
+    }
+    const site = hasKnownOption3Site ? option3Site : {
+        ...option3Site,
+        boundary: {
+            ...option3Site.boundary,
+            widthUm: legacyMmToUm(legacyState.site.width),
+            depthUm: legacyMmToUm(legacyState.site.depth),
+        },
+    };
     return {
         schemaVersion: 2,
-        schemaRevision: 2,
+        schemaRevision: 3,
         projectId: "option-3",
         name: "OPTION-3 ground floor",
         units: "um",
@@ -39,23 +57,38 @@ export function createOption3ProjectV2(legacyState = OPTION_3_V1_RECOVERY_STATE)
             edgeIndexing: "clockwiseFromRear",
             geometryRotationPositive: "clockwiseInSvgView",
         },
-        site: createOption3Site(),
+        site,
         building: {
-            status: "deferredToTopologyA2",
+            status: hasCuratedTopology ? "topologyActive" : "topologyDeferred",
             coverageStatus: "deferredToExteriorEnvelopeA4",
         },
-        topology: createOption3TopologyV2(),
+        topology: hasCuratedTopology ? createOption3TopologyV2() : deferredModel("A2"),
         spaces: deferredModel("A2"),
         openings: deferredModel("postA2"),
         dimensions: deferredModel("A2"),
         siteObjects: deferredModel("postA2"),
-        legacyEditorState: structuredClone(legacyState),
+        legacyEditorState: normalizedLegacyState,
         recovery: {
             fixture: "fixtures/option-3-v1.json",
             referenceImage: "dist/assets/option-3-reference.png",
             referenceImageSha256: OPTION_3_REFERENCE_SHA256,
         },
     };
+}
+export function isOption3BaselineLegacyGeometry(legacyState) {
+    if (!isKnownOption3LegacySite(legacyState))
+        return false;
+    const candidate = structuredClone(legacyState);
+    const baseline = structuredClone(OPTION_3_V1_RECOVERY_STATE);
+    candidate.site.width = baseline.site.width;
+    candidate.site.depth = baseline.site.depth;
+    return legacyEditorGeometryEquals(candidate, baseline);
+}
+function isKnownOption3LegacySite(legacyState) {
+    const exactSite = createOption3Site();
+    return (legacyState.site.width === OPTION_3_V1_RECOVERY_STATE.site.width &&
+        legacyState.site.depth === OPTION_3_V1_RECOVERY_STATE.site.depth) || (legacyState.site.width === umToLegacyMm(exactSite.boundary.widthUm) &&
+        legacyState.site.depth === umToLegacyMm(exactSite.boundary.depthUm));
 }
 function deferredModel(targetStage) {
     return { status: "deferred", targetStage, modelVersion: null, data: null };

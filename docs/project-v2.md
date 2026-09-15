@@ -5,7 +5,7 @@ ProjectV2 contains an exact site model and an explicitly isolated legacy editor 
 ```text
 ProjectV2
 ├─ schemaVersion: 2
-├─ schemaRevision: 2
+├─ schemaRevision: 3
 ├─ units: "um"
 ├─ coordinateSystem
 ├─ site
@@ -28,11 +28,11 @@ ProjectV2
 
 ## Schema-evolution policy
 
-`schemaVersion: 2` has an explicit `schemaRevision: 2`. Four future-model keys remain stable deferred envelopes with `status: "deferred"`, a target stage, and `modelVersion: null` / `data: null`. A2.1 activates the already-reserved topology key with a separately versioned and strictly validated canonical node/wall graph. It does not add a ProjectV2 top-level key or reinterpret the legacy editor rectangles as topology.
+`schemaVersion: 2` has an explicit `schemaRevision: 3`. Four future-model keys remain stable deferred envelopes with `status: "deferred"`, a target stage, and `modelVersion: null` / `data: null`. A2.1 activates the already-reserved topology key with a separately versioned and strictly validated canonical node/wall graph. It does not add a ProjectV2 top-level key or reinterpret the legacy editor rectangles as topology.
 
-A2.3 uses that existing revision-2 topology alternative without changing the ProjectV2 shape: new Option-3 projects and recovered V1 projects receive the curated active graph, while already-saved revision-2 documents preserve whichever valid deferred/empty/active topology they contain. The legacy `building.status` literal remains unchanged for revision-2 compatibility; topology authority is determined by the validated `topology.status` and model payload.
+A2.3.1 advances the revision because `building.status` now truthfully distinguishes `topologyActive` and `topologyDeferred`. Revision-2 saves migrate explicitly: the released curated A2.3 graph remains active, while deferred/empty topology remains non-active. Active revision-3 topology is additionally checked against the known baseline legacy geometry and current property boundary. Geometry changes made through the legacy editor demote topology instead of silently retaining a stale graph.
 
-The original A1 ProjectV2 documents had no `schemaRevision`, future-model slots, or road-width provenance. The loader recognizes exactly that frozen top-level shape as revision 1 and performs a one-way revision-1-to-revision-2 normalization. Unknown fields and unknown explicit revisions remain errors. Automated coverage preserves an A1-shaped save, reloads it, verifies all deferred slots, and round-trips the normalized document.
+The original A1 ProjectV2 documents had no `schemaRevision`, future-model slots, or road-width provenance. The loader recognizes exactly that frozen top-level shape and performs a one-way normalization to current revision 3 with deferred topology. Unknown fields and unknown explicit revisions remain errors. Automated coverage preserves an A1-shaped save, reloads it, verifies all deferred slots, and round-trips the normalized document.
 
 If later work cannot fit cleanly in the reserved/versioned slots, it must introduce `schemaVersion: 3` and an explicit ProjectV2-to-ProjectV3 migration instead of changing ProjectV2 semantics.
 

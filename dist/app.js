@@ -728,12 +728,12 @@ document.querySelector("#show-labels").addEventListener("change", (event) => {
   document.querySelector(`#${id}`).addEventListener("change", (event) => {
     try {
       const parsed = parseArchitecturalLength(event.target.value);
-      const candidate = clone(project);
-      candidate.site.boundary[key === "width" ? "widthUm" : "depthUm"] = parsed;
-      validateProjectV2(candidate);
+      const candidateState = clone(state);
+      candidateState.site[key] = lengthUmToLegacyMm(parsed);
+      const candidateProject = updateProjectFromLegacyEditorState(project, candidateState);
       pushHistory();
-      state.site[key] = lengthUmToLegacyMm(parsed);
-      project = candidate;
+      state = candidateState;
+      project = candidateProject;
       render(); saveState();
     } catch (error) {
       showToast(error instanceof Error ? error.message : "Invalid site dimension");
@@ -942,23 +942,24 @@ function registerAgentTools() {
     annotations: { readOnlyHint: false, untrustedContentHint: false },
     execute(input) {
       if (!input || !Object.keys(input).length) throw new Error("Provide at least one coverage input.");
-      const candidate = clone(project);
+      const candidateState = clone(state);
       let width = null;
       let depth = null;
       if (Number.isFinite(input.plotWidthFt)) {
         width = decimalFeetToLength(input.plotWidthFt);
-        candidate.site.boundary.widthUm = width;
+        candidateState.site.width = lengthUmToLegacyMm(width);
       }
       if (Number.isFinite(input.plotDepthFt)) {
         depth = decimalFeetToLength(input.plotDepthFt);
-        candidate.site.boundary.depthUm = depth;
+        candidateState.site.depth = lengthUmToLegacyMm(depth);
       }
-      validateProjectV2(candidate);
+      if (Number.isFinite(input.wallCommonAreaSqFt)) {
+        candidateState.commonAreaMm2 = input.wallCommonAreaSqFt * FT2_TO_MM2;
+      }
+      const candidateProject = updateProjectFromLegacyEditorState(project, candidateState);
       pushHistory();
-      project = candidate;
-      if (width !== null) state.site.width = lengthUmToLegacyMm(width);
-      if (depth !== null) state.site.depth = lengthUmToLegacyMm(depth);
-      if (Number.isFinite(input.wallCommonAreaSqFt)) state.commonAreaMm2 = input.wallCommonAreaSqFt * FT2_TO_MM2;
+      project = candidateProject;
+      state = candidateState;
       render();
       saveState();
       const values = coverageValues();

@@ -9,7 +9,6 @@ import {
   UnsupportedProjectVersionError,
 } from "../src/persistence/project-storage.js";
 import { ProjectValidationError } from "../src/project/validation.js";
-import { twoRoomSharedWallTopology } from "./fixtures/topology.js";
 
 describe("ProjectV2 validation and legacy recovery", () => {
   it("round-trips a strictly validated ProjectV2 project", () => {
@@ -18,10 +17,11 @@ describe("ProjectV2 validation and legacy recovery", () => {
   });
 
   it("preserves active topology and stable IDs through ProjectV2 save/load", () => {
-    const project = { ...createOption3ProjectV2(), topology: twoRoomSharedWallTopology() };
+    const project = createOption3ProjectV2();
     const recovered = parseProjectJson(serializeProject(project));
     expect(recovered.topology).toEqual(project.topology);
-    expect(Object.keys("walls" in recovered.topology ? recovered.topology.walls : {})).toContain("w-shared");
+    expect(recovered.topology.status).toBe("active");
+    expect(recovered.building.status).toBe("topologyActive");
   });
 
   it("recovers an A1-era ProjectV2 save through the explicit revision migration", () => {
@@ -33,12 +33,14 @@ describe("ProjectV2 validation and legacy recovery", () => {
     delete a1Save.dimensions;
     delete a1Save.siteObjects;
     delete a1Save.site.road.widthProvenance;
+    a1Save.building.status = "deferredToTopologyA2";
 
     const recovered = parseProjectJson(JSON.stringify(a1Save));
     expect(recovered.schemaVersion).toBe(2);
-    expect(recovered.schemaRevision).toBe(2);
+    expect(recovered.schemaRevision).toBe(3);
     expect(recovered.legacyEditorState).toEqual(a1Save.legacyEditorState);
     expect(recovered.topology).toEqual({ status: "deferred", targetStage: "A2", modelVersion: null, data: null });
+    expect(recovered.building.status).toBe("topologyDeferred");
     expect(recovered.spaces).toEqual({ status: "deferred", targetStage: "A2", modelVersion: null, data: null });
     expect(recovered.openings.targetStage).toBe("postA2");
     expect(recovered.dimensions.targetStage).toBe("A2");
@@ -73,7 +75,9 @@ describe("ProjectV2 validation and legacy recovery", () => {
     expect(fixture).toEqual(OPTION_3_V1_RECOVERY_STATE);
     const recovered = loadProjectValue(fixture);
     expect(recovered.schemaVersion).toBe(2);
-    expect(recovered.legacyEditorState).toEqual(OPTION_3_V1_RECOVERY_STATE);
+    expect(recovered.legacyEditorState.rooms).toEqual(OPTION_3_V1_RECOVERY_STATE.rooms);
+    expect(recovered.legacyEditorState.site).toEqual({ width: 14_986, depth: 24_130, coverageLimit: 0.66 });
+    expect(recovered.topology.status).toBe("active");
     expect(projectToLegacyEditorState(recovered).rooms).toEqual(OPTION_3_V1_RECOVERY_STATE.rooms);
   });
 });

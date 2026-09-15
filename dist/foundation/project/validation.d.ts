@@ -14,7 +14,8 @@ export declare function validateProjectV2(value: unknown): ProjectV2;
  * the legacy room rectangles as topology.
  */
 export declare function normalizeProjectV2(value: unknown): ProjectV2;
-export declare function migrateProjectV2A1ToRevision2(value: unknown): ProjectV2;
+export declare function migrateProjectV2A1ToRevision3(value: unknown): ProjectV2;
+export declare function migrateProjectV2Revision2To3(value: unknown): ProjectV2;
 export declare function detectProjectVersion(value: unknown): 1 | 2;
 export declare function validateLegacyProjectEnvelopeV1(value: unknown): LegacyProjectEnvelopeV1;
 //# sourceMappingURL=validation.d.ts.map

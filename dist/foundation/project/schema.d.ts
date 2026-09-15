@@ -55,14 +55,14 @@ export interface DeferredModelSlotV2 {
 }
 export interface ProjectV2 {
     readonly schemaVersion: 2;
-    readonly schemaRevision: 2;
+    readonly schemaRevision: 3;
     readonly projectId: "option-3";
     readonly name: string;
     readonly units: "um";
     readonly coordinateSystem: CoordinateSystemV2;
     site: SiteV2;
     readonly building: {
-        readonly status: "deferredToTopologyA2";
+        readonly status: "topologyActive" | "topologyDeferred";
         readonly coverageStatus: "deferredToExteriorEnvelopeA4";
     };
     readonly topology: DeferredModelSlotV2 | TopologyV2;

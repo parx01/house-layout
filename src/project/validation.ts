@@ -1,6 +1,9 @@
-import { areaUm2, lengthUm } from "../core/units.js";
+import { areaUm2, legacyMmToUm, lengthUm, umToLegacyMm } from "../core/units.js";
 import type { SiteV2 } from "../core/site.js";
+import type { TopologyV2 } from "../topology/model.js";
 import { validateTopologyV2 } from "../topology/validation.js";
+import { isOption3BaselineLegacyGeometry } from "./option3-baseline.js";
+import { createOption3TopologyV2 } from "./option3-topology.js";
 import type {
   DeferredModelSlotV2,
   LegacyEditorStateV1,
@@ -165,7 +168,7 @@ export function validateProjectV2(value: unknown): ProjectV2 {
     "project",
   );
   literal(root.schemaVersion, 2, "project.schemaVersion");
-  literal(root.schemaRevision, 2, "project.schemaRevision");
+  literal(root.schemaRevision, 3, "project.schemaRevision");
   literal(root.projectId, "option-3", "project.projectId");
   const name = stringValue(root.name, "project.name");
   literal(root.units, "um", "project.units");
@@ -179,12 +182,14 @@ export function validateProjectV2(value: unknown): ProjectV2 {
   literal(coordinateSystem.geometryRotationPositive, "clockwiseInSvgView", "project.coordinateSystem.geometryRotationPositive");
 
   const site = validateSiteV2(root.site);
+  const topology = validateProjectTopology(root.topology);
+  const legacyEditorState = validateLegacyEditorStateV1(root.legacyEditorState, "project.legacyEditorState");
   const building = record(root.building, "project.building");
   exactKeys(building, ["status", "coverageStatus"], [], "project.building");
-  literal(building.status, "deferredToTopologyA2", "project.building.status");
+  const buildingStatus = topology.status === "active" ? "topologyActive" : "topologyDeferred";
+  literal(building.status, buildingStatus, "project.building.status");
   literal(building.coverageStatus, "deferredToExteriorEnvelopeA4", "project.building.coverageStatus");
 
-  const topology = validateProjectTopology(root.topology);
   const spaces = validateDeferredModel(root.spaces, "project.spaces", "A2");
   const openings = validateDeferredModel(root.openings, "project.openings", "postA2");
   const dimensions = validateDeferredModel(root.dimensions, "project.dimensions", "A2");
@@ -197,9 +202,11 @@ export function validateProjectV2(value: unknown): ProjectV2 {
   const referenceImageSha256 = stringValue(recovery.referenceImageSha256, "project.recovery.referenceImageSha256");
   if (!/^[a-f0-9]{64}$/.test(referenceImageSha256)) fail("project.recovery.referenceImageSha256 must be a lowercase SHA-256 value.");
 
+  validateCrossModelTopology(site, topology, legacyEditorState);
+
   return {
     schemaVersion: 2,
-    schemaRevision: 2,
+    schemaRevision: 3,
     projectId: "option-3",
     name,
     units: "um",
@@ -211,19 +218,82 @@ export function validateProjectV2(value: unknown): ProjectV2 {
       geometryRotationPositive: "clockwiseInSvgView",
     },
     site,
-    building: { status: "deferredToTopologyA2", coverageStatus: "deferredToExteriorEnvelopeA4" },
+    building: { status: buildingStatus, coverageStatus: "deferredToExteriorEnvelopeA4" },
     topology,
     spaces,
     openings,
     dimensions,
     siteObjects,
-    legacyEditorState: validateLegacyEditorStateV1(root.legacyEditorState, "project.legacyEditorState"),
+    legacyEditorState,
     recovery: {
       fixture: "fixtures/option-3-v1.json",
       referenceImage: "dist/assets/option-3-reference.png",
       referenceImageSha256,
     },
   };
+}
+
+function validateCrossModelTopology(
+  site: SiteV2,
+  topology: ProjectV2["topology"],
+  legacyEditorState: LegacyEditorStateV1,
+): void {
+  if (topology.status !== "active") return;
+  for (const node of Object.values(topology.nodes)) {
+    if (node.xUm < 0 || node.yUm < 0 || node.xUm > site.boundary.widthUm || node.yUm > site.boundary.depthUm) {
+      fail(`project.topology node ${node.id} lies outside the current site boundary.`);
+    }
+  }
+  for (const wall of Object.values(topology.walls)) {
+    const start = topology.nodes[wall.startNodeId]!;
+    const end = topology.nodes[wall.endNodeId]!;
+    const halfThicknessUm = wall.thicknessUm / 2;
+    const bandOutside = start.yUm === end.yUm
+      ? start.yUm - halfThicknessUm < 0 || start.yUm + halfThicknessUm > site.boundary.depthUm
+      : start.xUm - halfThicknessUm < 0 || start.xUm + halfThicknessUm > site.boundary.widthUm;
+    if (bandOutside) fail(`project.topology wall ${wall.id} thickness band lies outside the current site boundary.`);
+  }
+  if (
+    legacyMmToUm(legacyEditorState.site.width) !== site.boundary.widthUm ||
+    legacyMmToUm(legacyEditorState.site.depth) !== site.boundary.depthUm
+  ) {
+    fail("project.topology cannot remain active when the legacy editor site dimensions disagree with the authoritative site.");
+  }
+  if (!isOption3BaselineLegacyGeometry(legacyEditorState)) {
+    fail("project.topology cannot remain active after legacy editor geometry diverges from the curated Option-3 baseline.");
+  }
+  if (!topologyEquals(topology, createOption3TopologyV2())) {
+    fail("project.topology is active but does not match the curated Option-3 topology compatible with the legacy baseline.");
+  }
+}
+
+function topologyEquals(left: TopologyV2, right: TopologyV2): boolean {
+  const leftNodeIds = Object.keys(left.nodes).sort();
+  const rightNodeIds = Object.keys(right.nodes).sort();
+  if (!stringArraysEqual(leftNodeIds, rightNodeIds)) return false;
+  for (const id of leftNodeIds) {
+    const leftNode = left.nodes[id as keyof typeof left.nodes]!;
+    const rightNode = right.nodes[id as keyof typeof right.nodes]!;
+    if (!rightNode || leftNode.id !== rightNode.id || leftNode.xUm !== rightNode.xUm || leftNode.yUm !== rightNode.yUm) return false;
+  }
+
+  const leftWallIds = Object.keys(left.walls).sort();
+  const rightWallIds = Object.keys(right.walls).sort();
+  if (!stringArraysEqual(leftWallIds, rightWallIds)) return false;
+  for (const id of leftWallIds) {
+    const leftWall = left.walls[id as keyof typeof left.walls]!;
+    const rightWall = right.walls[id as keyof typeof right.walls]!;
+    if (!rightWall ||
+      leftWall.id !== rightWall.id ||
+      leftWall.startNodeId !== rightWall.startNodeId ||
+      leftWall.endNodeId !== rightWall.endNodeId ||
+      leftWall.thicknessUm !== rightWall.thicknessUm) return false;
+  }
+  return true;
+}
+
+function stringArraysEqual(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index]);
 }
 
 function validateDeferredModel(
@@ -350,14 +420,15 @@ function validateRoadWidthProvenance(value: unknown): SiteV2["road"]["widthProve
 export function normalizeProjectV2(value: unknown): ProjectV2 {
   const root = record(value, "project");
   literal(root.schemaVersion, 2, "project.schemaVersion");
-  if (root.schemaRevision === 2) return validateProjectV2(value);
+  if (root.schemaRevision === 3) return validateProjectV2(value);
+  if (root.schemaRevision === 2) return migrateProjectV2Revision2To3(root);
   if (root.schemaRevision !== undefined) {
     fail(`project.schemaRevision ${String(root.schemaRevision)} is not supported for schemaVersion 2.`);
   }
-  return migrateProjectV2A1ToRevision2(root);
+  return migrateProjectV2A1ToRevision3(root);
 }
 
-export function migrateProjectV2A1ToRevision2(value: unknown): ProjectV2 {
+export function migrateProjectV2A1ToRevision3(value: unknown): ProjectV2 {
   const root = record(value, "project");
   exactKeys(
     root,
@@ -366,6 +437,10 @@ export function migrateProjectV2A1ToRevision2(value: unknown): ProjectV2 {
     "project",
   );
   literal(root.schemaVersion, 2, "project.schemaVersion");
+  const building = record(root.building, "project.building");
+  exactKeys(building, ["status", "coverageStatus"], [], "project.building");
+  literal(building.status, "deferredToTopologyA2", "project.building.status");
+  literal(building.coverageStatus, "deferredToExteriorEnvelopeA4", "project.building.coverageStatus");
 
   const site = record(root.site, "project.site");
   const road = record(site.road, "project.site.road");
@@ -386,12 +461,39 @@ export function migrateProjectV2A1ToRevision2(value: unknown): ProjectV2 {
           }
         : { kind: "legacyProjectUnverified", sourceDocument: null, sourceLabel: null };
 
-  migrated.schemaRevision = 2;
+  migrated.schemaRevision = 3;
+  const migratedBuilding = record(migrated.building, "project.building");
+  migratedBuilding.status = "topologyDeferred";
   migrated.topology = deferredModel("A2");
   migrated.spaces = deferredModel("A2");
   migrated.openings = deferredModel("postA2");
   migrated.dimensions = deferredModel("A2");
   migrated.siteObjects = deferredModel("postA2");
+  return validateProjectV2(migrated);
+}
+
+export function migrateProjectV2Revision2To3(value: unknown): ProjectV2 {
+  const root = record(value, "project");
+  literal(root.schemaVersion, 2, "project.schemaVersion");
+  literal(root.schemaRevision, 2, "project.schemaRevision");
+  const building = record(root.building, "project.building");
+  exactKeys(building, ["status", "coverageStatus"], [], "project.building");
+  literal(building.status, "deferredToTopologyA2", "project.building.status");
+  literal(building.coverageStatus, "deferredToExteriorEnvelopeA4", "project.building.coverageStatus");
+  const topology = validateProjectTopology(root.topology);
+
+  const migrated = structuredClone(root);
+  migrated.schemaRevision = 3;
+  const migratedBuilding = record(migrated.building, "project.building");
+  migratedBuilding.status = topology.status === "active" ? "topologyActive" : "topologyDeferred";
+  const migratedLegacy = validateLegacyEditorStateV1(migrated.legacyEditorState, "project.legacyEditorState");
+  if (isOption3BaselineLegacyGeometry(migratedLegacy)) {
+    const migratedSite = validateSiteV2(migrated.site);
+    const storedLegacy = record(migrated.legacyEditorState, "project.legacyEditorState");
+    const storedLegacySite = record(storedLegacy.site, "project.legacyEditorState.site");
+    storedLegacySite.width = umToLegacyMm(migratedSite.boundary.widthUm);
+    storedLegacySite.depth = umToLegacyMm(migratedSite.boundary.depthUm);
+  }
   return validateProjectV2(migrated);
 }
 
