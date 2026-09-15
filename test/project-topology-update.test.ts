@@ -73,7 +73,7 @@ describe("A2.6.1 canonical project topology updates", () => {
     expect(parseProjectJson(serializeProject(updated)).spaces).toEqual(before.spaces);
   });
 
-  it("explicitly rejects a topology result that would orphan a bound face", () => {
+  it("rejects a forged A2.5 result that replaces a wall identity", () => {
     const before = projectWithBoundSpace();
     if (before.topology.status !== "active" || before.spaces.status !== "active") {
       throw new Error("Active topology and spaces are required.");
@@ -95,9 +95,8 @@ describe("A2.6.1 canonical project topology updates", () => {
       applyTopologyMoveResult(before, forgedResult);
       throw new Error("Expected semantic binding rejection.");
     } catch (error) {
-      expect((error as ProjectTopologyUpdateError).stage).toBe("semanticSpaces");
-      expect((error as Error).message).toContain(`space s-authority-test would lose bound face`);
-      expect((error as Error).message).toContain("automatic remapping is not permitted");
+      expect((error as ProjectTopologyUpdateError).stage).toBe("moveResult");
+      expect((error as Error).message).toContain("must preserve every canonical node and wall ID");
     }
   });
 

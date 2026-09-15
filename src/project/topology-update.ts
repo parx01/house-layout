@@ -1,7 +1,12 @@
 import { extractBoundedFaces } from "../spaces/extract-faces.js";
 import type { FaceId } from "../spaces/model.js";
+import {
+  reconcileSemanticSpaces,
+  type SemanticReconciliationReport,
+} from "../spaces/semantic-rebinding.js";
 import type { NodeId, TopologyV2, WallId } from "../topology/model.js";
 import type { TopologyMoveResult } from "../topology/movement.js";
+import type { TopologyChangeResult } from "../topology/operations.js";
 import { validateTopologyV2 } from "../topology/validation.js";
 import type { ProjectV2 } from "./schema.js";
 import { validateProjectV2 } from "./validation.js";
@@ -17,17 +22,38 @@ export class ProjectTopologyUpdateError extends Error {
     readonly stage: ProjectTopologyUpdateFailureStage,
     message: string,
     options?: ErrorOptions,
+    readonly reconciliation?: SemanticReconciliationReport,
   ) {
     super(message, options);
     this.name = "ProjectTopologyUpdateError";
   }
 }
 
+export type ProjectTopologyTransactionResult =
+  | {
+      readonly status: "committed";
+      readonly project: ProjectV2;
+      readonly reconciliation: SemanticReconciliationReport;
+    }
+  | {
+      readonly status: "remapRequired";
+      readonly candidateTopology: TopologyV2;
+      readonly reconciliation: SemanticReconciliationReport & { readonly status: "remapRequired" };
+    };
+
 /**
  * Atomically accepts an A2.5 movement result as the project's new canonical
  * topology. Legacy rectangles are intentionally untouched reference data.
  */
 export function applyTopologyMoveResult(projectValue: ProjectV2, moveResult: TopologyMoveResult): ProjectV2 {
+  return applyTopologyMoveTransaction(projectValue, moveResult).project;
+}
+
+/** A2.5-compatible wrapper that also exposes the A3.3 reconciliation report. */
+export function applyTopologyMoveTransaction(
+  projectValue: ProjectV2,
+  moveResult: TopologyMoveResult,
+): Extract<ProjectTopologyTransactionResult, { readonly status: "committed" }> {
   const project = validateInputProject(projectValue);
   if (project.topology.status !== "active") {
     throw new ProjectTopologyUpdateError("inputProject", "A topology movement requires an active project topology.");
@@ -45,17 +71,6 @@ export function applyTopologyMoveResult(projectValue: ProjectV2, moveResult: Top
 
   const beforeFaceIds = extractBoundedFaces(project.topology).faces.map((face) => face.id);
   const afterFaceIds = extractBoundedFaces(candidateTopology).faces.map((face) => face.id);
-  if (project.spaces.status === "active") {
-    const availableFaceIds = new Set(afterFaceIds);
-    const orphaned = project.spaces.spaces.find((space) => !availableFaceIds.has(space.faceId));
-    if (orphaned) {
-      throw new ProjectTopologyUpdateError(
-        "semanticSpaces",
-        `Topology move rejected because space ${orphaned.id} would lose bound face ${orphaned.faceId}; automatic remapping is not permitted.`,
-      );
-    }
-  }
-
   assertSameEntities(project.topology, candidateTopology);
   assertNodeChangesMatch(project.topology, candidateTopology, moveResult);
 
@@ -68,26 +83,109 @@ export function applyTopologyMoveResult(projectValue: ProjectV2, moveResult: Top
     throw new ProjectTopologyUpdateError("moveResult", "Topology move metadata does not match the current project faces.");
   }
   if (!equalIds(beforeFaceIds, afterFaceIds)) {
-    const stage = project.spaces.status === "active" ? "semanticSpaces" : "moveResult";
     throw new ProjectTopologyUpdateError(
-      stage,
-      project.spaces.status === "active"
-        ? "Topology move rejected because bound face identities changed; semantic space remapping must be explicit."
-        : "Topology move rejected because derived face identities changed.",
+      "moveResult",
+      "A2.5 movement rejected because derived face identities changed.",
     );
+  }
+
+  const transaction = applyCanonicalTopologyUpdate(project, candidateTopology);
+  if (transaction.status === "remapRequired") {
+    throw new ProjectTopologyUpdateError(
+      "semanticSpaces",
+      "Topology move requires explicit semantic remapping and was not committed.",
+      undefined,
+      transaction.reconciliation,
+    );
+  }
+  return transaction;
+}
+
+/** Accepts an A2.2 canonical change result through the same atomic semantic gate. */
+export function applyTopologyChangeResult(
+  projectValue: ProjectV2,
+  changeResult: TopologyChangeResult,
+): ProjectTopologyTransactionResult {
+  if (!changeResult || typeof changeResult !== "object" || !("topology" in changeResult)) {
+    throw new ProjectTopologyUpdateError("moveResult", "Topology change result is missing its candidate topology.");
+  }
+  return applyCanonicalTopologyUpdate(projectValue, changeResult.topology);
+}
+
+/**
+ * Validates and prepares any canonical topology replacement. A semantic
+ * ambiguity returns `remapRequired` without constructing or mutating a project.
+ */
+export function applyCanonicalTopologyUpdate(
+  projectValue: ProjectV2,
+  topologyValue: TopologyV2,
+): ProjectTopologyTransactionResult {
+  const project = validateInputProject(projectValue);
+  if (project.topology.status !== "active") {
+    throw new ProjectTopologyUpdateError("inputProject", "A canonical topology update requires an active project topology.");
+  }
+
+  let candidateTopology: TopologyV2;
+  try {
+    candidateTopology = validateTopologyV2(topologyValue, "candidateTopology");
+  } catch (error) {
+    throw updateError("moveResult", `Candidate topology is invalid: ${errorMessage(error)}`, error);
+  }
+
+  // Validate all cross-model geometry constraints before attempting semantic
+  // reconciliation. The temporary deferred slot avoids validating stale face
+  // references against geometry that has not yet been reconciled.
+  try {
+    validateProjectV2({
+      ...structuredClone(project),
+      building: { ...project.building, status: "topologyActive" },
+      topology: candidateTopology,
+      spaces:
+        project.spaces.status === "active"
+          ? { status: "deferred", targetStage: "A2", modelVersion: null, data: null }
+          : structuredClone(project.spaces),
+    });
+  } catch (error) {
+    throw updateError("candidateProject", `Topology cannot be applied to the project: ${errorMessage(error)}`, error);
+  }
+
+  let spaces = structuredClone(project.spaces);
+  let reconciliation: SemanticReconciliationReport;
+  if (project.spaces.status === "active") {
+    const result = reconcileSemanticSpaces(project.spaces, project.topology, candidateTopology);
+    if (result.status === "remapRequired") {
+      return {
+        status: "remapRequired",
+        candidateTopology: structuredClone(candidateTopology),
+        reconciliation: result.report,
+      };
+    }
+    spaces = result.spaces;
+    reconciliation = result.report;
+  } else {
+    const previousFaceIds = new Set(extractBoundedFaces(project.topology).faces.map((face) => face.id));
+    const candidateFaceIds = extractBoundedFaces(candidateTopology).faces.map((face) => face.id).sort();
+    reconciliation = {
+      status: "resolved",
+      preservedBindings: [],
+      reboundBindings: [],
+      unresolvedSpaces: [],
+      newFaceIds: candidateFaceIds.filter((identity) => !previousFaceIds.has(identity)),
+      unclaimedFaceIds: candidateFaceIds,
+    };
   }
 
   const candidate: ProjectV2 = {
     ...structuredClone(project),
     building: { ...project.building, status: "topologyActive" },
     topology: candidateTopology,
-    spaces: structuredClone(project.spaces),
+    spaces,
     legacyEditorState: structuredClone(project.legacyEditorState),
   };
   try {
-    return validateProjectV2(candidate);
+    return { status: "committed", project: validateProjectV2(candidate), reconciliation };
   } catch (error) {
-    throw updateError("candidateProject", `Topology move cannot be applied to the project: ${errorMessage(error)}`, error);
+    throw updateError("candidateProject", `Topology cannot be applied to the project: ${errorMessage(error)}`, error);
   }
 }
 
