@@ -1,6 +1,6 @@
 # Plan 66 house-plan editor
 
-Plan 66 is a local SVG editor for inspecting and adjusting the OPTION-3 rectangle prototype. The A0/A1 foundation adds exact architectural units, a strict ProjectV2 save format, explicit site metadata, editable design targets, and automated tests without introducing shared-wall topology.
+Plan 66 is a local SVG editor for inspecting and adjusting the OPTION-3 rectangle prototype. Its ProjectV2 foundation now includes the curated A2.3 canonical physical wall topology while the visible editor remains the isolated legacy adapter.
 
 ## Open it
 
@@ -55,11 +55,13 @@ npm test
 npm run build
 ```
 
-`npm run build` compiles the TypeScript foundation to `dist/foundation`. The existing SVG renderer remains a transitional legacy UI adapter until a later A2 stage supplies the curated Option-3 topology.
+`npm run build` compiles the TypeScript foundation to `dist/foundation`. The existing SVG renderer remains a transitional legacy UI adapter; A2.3 does not add production topology rendering or editing.
 
 A2.1 establishes only the internal serialized topology graph. The current Option-3 rectangles are not converted or rendered as topology yet; see `docs/topology-a2-1.md` for the centre-line convention and validation boundary.
 
 A2.2 adds deterministic wall insertion, endpoint reuse, T/X junction canonicalization, segment splitting, and explicit wall-ID remapping. It still does not convert Option-3 or change the editor UI; see `docs/topology-a2-2.md`.
+
+A2.3 builds the Option-3 physical wall graph through those A2.2 operations and activates it in the normal ProjectV2 baseline. The fixed reference and V1 rectangles remain separate recovery sources, and semantic spaces/openings remain deferred; see `docs/topology-a2-3.md`.
 
 ## Construction note
 

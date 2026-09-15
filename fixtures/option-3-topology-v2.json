@@ -1,0 +1,399 @@
+{
+  "status": "active",
+  "modelVersion": 1,
+  "nodes": {
+    "n-option3-rear-outer-1": {
+      "id": "n-option3-rear-outer-1",
+      "xUm": 1565700,
+      "yUm": 3165700
+    },
+    "n-option3-rear-outer-2": {
+      "id": "n-option3-rear-outer-2",
+      "xUm": 13434300,
+      "yUm": 3165700
+    },
+    "n-option3-right-outer-1": {
+      "id": "n-option3-right-outer-1",
+      "xUm": 13434300,
+      "yUm": 18870000
+    },
+    "n-option3-rear-central-1": {
+      "id": "n-option3-rear-central-1",
+      "xUm": 1565700,
+      "yUm": 7909500
+    },
+    "n-option3-rear-central-2": {
+      "id": "n-option3-rear-central-2",
+      "xUm": 13434300,
+      "yUm": 7909500
+    },
+    "n-option3-central-front-1": {
+      "id": "n-option3-central-front-1",
+      "xUm": 4788500,
+      "yUm": 14126500
+    },
+    "n-option3-central-front-2": {
+      "id": "n-option3-central-front-2",
+      "xUm": 13434300,
+      "yUm": 14126500
+    },
+    "n-option3-front-outer-1": {
+      "id": "n-option3-front-outer-1",
+      "xUm": 4788500,
+      "yUm": 18870000
+    },
+    "n-option3-left-outer-1": {
+      "id": "n-option3-left-outer-1",
+      "xUm": 1565700,
+      "yUm": 16050000
+    },
+    "n-option3-stair-outer-1": {
+      "id": "n-option3-stair-outer-1",
+      "xUm": 4788500,
+      "yUm": 16050000
+    },
+    "n-option3-central-step-1": {
+      "id": "n-option3-central-step-1",
+      "xUm": 4788500,
+      "yUm": 9547800
+    },
+    "n-option3-puja-kitchen-1": {
+      "id": "n-option3-puja-kitchen-1",
+      "xUm": 1565700,
+      "yUm": 9547800
+    },
+    "n-option3-kitchen-stair-1": {
+      "id": "n-option3-kitchen-stair-1",
+      "xUm": 1565700,
+      "yUm": 12945500
+    },
+    "n-option3-kitchen-stair-2": {
+      "id": "n-option3-kitchen-stair-2",
+      "xUm": 4788500,
+      "yUm": 12945500
+    },
+    "n-option3-rear-partition-left-1": {
+      "id": "n-option3-rear-partition-left-1",
+      "xUm": 5701000,
+      "yUm": 3165700
+    },
+    "n-option3-rear-partition-left-2": {
+      "id": "n-option3-rear-partition-left-2",
+      "xUm": 5701000,
+      "yUm": 7909500
+    },
+    "n-option3-rear-partition-middle-1": {
+      "id": "n-option3-rear-partition-middle-1",
+      "xUm": 7495500,
+      "yUm": 3165700
+    },
+    "n-option3-rear-partition-middle-2": {
+      "id": "n-option3-rear-partition-middle-2",
+      "xUm": 7495500,
+      "yUm": 7909500
+    },
+    "n-option3-rear-partition-right-1": {
+      "id": "n-option3-rear-partition-right-1",
+      "xUm": 9299000,
+      "yUm": 3165700
+    },
+    "n-option3-rear-partition-right-2": {
+      "id": "n-option3-rear-partition-right-2",
+      "xUm": 9299000,
+      "yUm": 7909500
+    },
+    "n-option3-rear-wet-split-1": {
+      "id": "n-option3-rear-wet-split-1",
+      "xUm": 5701000,
+      "yUm": 6080350
+    },
+    "n-option3-rear-wet-split-2": {
+      "id": "n-option3-rear-wet-split-2",
+      "xUm": 7495500,
+      "yUm": 6080350
+    },
+    "n-option3-rear-wet-split-3": {
+      "id": "n-option3-rear-wet-split-3",
+      "xUm": 9299000,
+      "yUm": 6080350
+    },
+    "n-option3-front-partition-left-1": {
+      "id": "n-option3-front-partition-left-1",
+      "xUm": 8255600,
+      "yUm": 14126500
+    },
+    "n-option3-front-partition-left-2": {
+      "id": "n-option3-front-partition-left-2",
+      "xUm": 8255600,
+      "yUm": 18870000
+    },
+    "n-option3-front-partition-right-1": {
+      "id": "n-option3-front-partition-right-1",
+      "xUm": 9893900,
+      "yUm": 14126500
+    },
+    "n-option3-front-partition-right-2": {
+      "id": "n-option3-front-partition-right-2",
+      "xUm": 9893900,
+      "yUm": 18870000
+    },
+    "n-option3-front-wet-split-1": {
+      "id": "n-option3-front-wet-split-1",
+      "xUm": 8255600,
+      "yUm": 15650500
+    },
+    "n-option3-front-wet-split-2": {
+      "id": "n-option3-front-wet-split-2",
+      "xUm": 9893900,
+      "yUm": 15650500
+    }
+  },
+  "walls": {
+    "w-option3-rear-central-1": {
+      "id": "w-option3-rear-central-1",
+      "startNodeId": "n-option3-rear-outer-2",
+      "endNodeId": "n-option3-rear-central-2",
+      "thicknessUm": 228600
+    },
+    "w-option3-central-front-1": {
+      "id": "w-option3-central-front-1",
+      "startNodeId": "n-option3-rear-central-2",
+      "endNodeId": "n-option3-central-front-2",
+      "thicknessUm": 228600
+    },
+    "w-option3-central-front-2": {
+      "id": "w-option3-central-front-2",
+      "startNodeId": "n-option3-central-front-2",
+      "endNodeId": "n-option3-right-outer-1",
+      "thicknessUm": 228600
+    },
+    "w-option3-left-outer-1": {
+      "id": "w-option3-left-outer-1",
+      "startNodeId": "n-option3-rear-outer-1",
+      "endNodeId": "n-option3-rear-central-1",
+      "thicknessUm": 228600
+    },
+    "w-option3-stair-outer-1": {
+      "id": "w-option3-stair-outer-1",
+      "startNodeId": "n-option3-left-outer-1",
+      "endNodeId": "n-option3-stair-outer-1",
+      "thicknessUm": 228600
+    },
+    "w-option3-central-step-2": {
+      "id": "w-option3-central-step-2",
+      "startNodeId": "n-option3-central-front-1",
+      "endNodeId": "n-option3-stair-outer-1",
+      "thicknessUm": 114300
+    },
+    "w-option3-central-step-3": {
+      "id": "w-option3-central-step-3",
+      "startNodeId": "n-option3-stair-outer-1",
+      "endNodeId": "n-option3-front-outer-1",
+      "thicknessUm": 114300
+    },
+    "w-option3-puja-kitchen-1": {
+      "id": "w-option3-puja-kitchen-1",
+      "startNodeId": "n-option3-rear-central-1",
+      "endNodeId": "n-option3-puja-kitchen-1",
+      "thicknessUm": 228600
+    },
+    "w-option3-puja-kitchen-3": {
+      "id": "w-option3-puja-kitchen-3",
+      "startNodeId": "n-option3-puja-kitchen-1",
+      "endNodeId": "n-option3-central-step-1",
+      "thicknessUm": 114300
+    },
+    "w-option3-kitchen-stair-1": {
+      "id": "w-option3-kitchen-stair-1",
+      "startNodeId": "n-option3-central-step-1",
+      "endNodeId": "n-option3-kitchen-stair-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-kitchen-stair-2": {
+      "id": "w-option3-kitchen-stair-2",
+      "startNodeId": "n-option3-kitchen-stair-2",
+      "endNodeId": "n-option3-central-front-1",
+      "thicknessUm": 114300
+    },
+    "w-option3-kitchen-stair-3": {
+      "id": "w-option3-kitchen-stair-3",
+      "startNodeId": "n-option3-puja-kitchen-1",
+      "endNodeId": "n-option3-kitchen-stair-1",
+      "thicknessUm": 228600
+    },
+    "w-option3-kitchen-stair-4": {
+      "id": "w-option3-kitchen-stair-4",
+      "startNodeId": "n-option3-kitchen-stair-1",
+      "endNodeId": "n-option3-left-outer-1",
+      "thicknessUm": 228600
+    },
+    "w-option3-kitchen-stair-5": {
+      "id": "w-option3-kitchen-stair-5",
+      "startNodeId": "n-option3-kitchen-stair-1",
+      "endNodeId": "n-option3-kitchen-stair-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-rear-partition-left-1": {
+      "id": "w-option3-rear-partition-left-1",
+      "startNodeId": "n-option3-rear-central-1",
+      "endNodeId": "n-option3-rear-partition-left-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-rear-partition-left-3": {
+      "id": "w-option3-rear-partition-left-3",
+      "startNodeId": "n-option3-rear-outer-1",
+      "endNodeId": "n-option3-rear-partition-left-1",
+      "thicknessUm": 228600
+    },
+    "w-option3-rear-partition-middle-1": {
+      "id": "w-option3-rear-partition-middle-1",
+      "startNodeId": "n-option3-rear-partition-left-2",
+      "endNodeId": "n-option3-rear-partition-middle-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-rear-partition-middle-3": {
+      "id": "w-option3-rear-partition-middle-3",
+      "startNodeId": "n-option3-rear-partition-left-1",
+      "endNodeId": "n-option3-rear-partition-middle-1",
+      "thicknessUm": 228600
+    },
+    "w-option3-rear-partition-right-1": {
+      "id": "w-option3-rear-partition-right-1",
+      "startNodeId": "n-option3-rear-partition-middle-2",
+      "endNodeId": "n-option3-rear-partition-right-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-rear-partition-right-2": {
+      "id": "w-option3-rear-partition-right-2",
+      "startNodeId": "n-option3-rear-partition-right-2",
+      "endNodeId": "n-option3-rear-central-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-rear-partition-right-3": {
+      "id": "w-option3-rear-partition-right-3",
+      "startNodeId": "n-option3-rear-partition-middle-1",
+      "endNodeId": "n-option3-rear-partition-right-1",
+      "thicknessUm": 228600
+    },
+    "w-option3-rear-partition-right-4": {
+      "id": "w-option3-rear-partition-right-4",
+      "startNodeId": "n-option3-rear-partition-right-1",
+      "endNodeId": "n-option3-rear-outer-2",
+      "thicknessUm": 228600
+    },
+    "w-option3-rear-wet-split-1": {
+      "id": "w-option3-rear-wet-split-1",
+      "startNodeId": "n-option3-rear-partition-left-1",
+      "endNodeId": "n-option3-rear-wet-split-1",
+      "thicknessUm": 114300
+    },
+    "w-option3-rear-wet-split-2": {
+      "id": "w-option3-rear-wet-split-2",
+      "startNodeId": "n-option3-rear-wet-split-1",
+      "endNodeId": "n-option3-rear-partition-left-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-rear-wet-split-3": {
+      "id": "w-option3-rear-wet-split-3",
+      "startNodeId": "n-option3-rear-partition-middle-1",
+      "endNodeId": "n-option3-rear-wet-split-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-rear-wet-split-4": {
+      "id": "w-option3-rear-wet-split-4",
+      "startNodeId": "n-option3-rear-wet-split-2",
+      "endNodeId": "n-option3-rear-partition-middle-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-rear-wet-split-5": {
+      "id": "w-option3-rear-wet-split-5",
+      "startNodeId": "n-option3-rear-partition-right-1",
+      "endNodeId": "n-option3-rear-wet-split-3",
+      "thicknessUm": 114300
+    },
+    "w-option3-rear-wet-split-6": {
+      "id": "w-option3-rear-wet-split-6",
+      "startNodeId": "n-option3-rear-wet-split-3",
+      "endNodeId": "n-option3-rear-partition-right-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-rear-wet-split-7": {
+      "id": "w-option3-rear-wet-split-7",
+      "startNodeId": "n-option3-rear-wet-split-1",
+      "endNodeId": "n-option3-rear-wet-split-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-rear-wet-split-8": {
+      "id": "w-option3-rear-wet-split-8",
+      "startNodeId": "n-option3-rear-wet-split-2",
+      "endNodeId": "n-option3-rear-wet-split-3",
+      "thicknessUm": 114300
+    },
+    "w-option3-front-partition-left-1": {
+      "id": "w-option3-front-partition-left-1",
+      "startNodeId": "n-option3-central-front-1",
+      "endNodeId": "n-option3-front-partition-left-1",
+      "thicknessUm": 114300
+    },
+    "w-option3-front-partition-left-3": {
+      "id": "w-option3-front-partition-left-3",
+      "startNodeId": "n-option3-front-outer-1",
+      "endNodeId": "n-option3-front-partition-left-2",
+      "thicknessUm": 228600
+    },
+    "w-option3-front-partition-right-1": {
+      "id": "w-option3-front-partition-right-1",
+      "startNodeId": "n-option3-front-partition-left-1",
+      "endNodeId": "n-option3-front-partition-right-1",
+      "thicknessUm": 114300
+    },
+    "w-option3-front-partition-right-2": {
+      "id": "w-option3-front-partition-right-2",
+      "startNodeId": "n-option3-front-partition-right-1",
+      "endNodeId": "n-option3-central-front-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-front-partition-right-3": {
+      "id": "w-option3-front-partition-right-3",
+      "startNodeId": "n-option3-front-partition-left-2",
+      "endNodeId": "n-option3-front-partition-right-2",
+      "thicknessUm": 228600
+    },
+    "w-option3-front-partition-right-4": {
+      "id": "w-option3-front-partition-right-4",
+      "startNodeId": "n-option3-front-partition-right-2",
+      "endNodeId": "n-option3-right-outer-1",
+      "thicknessUm": 228600
+    },
+    "w-option3-front-wet-split-1": {
+      "id": "w-option3-front-wet-split-1",
+      "startNodeId": "n-option3-front-partition-left-1",
+      "endNodeId": "n-option3-front-wet-split-1",
+      "thicknessUm": 114300
+    },
+    "w-option3-front-wet-split-2": {
+      "id": "w-option3-front-wet-split-2",
+      "startNodeId": "n-option3-front-wet-split-1",
+      "endNodeId": "n-option3-front-partition-left-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-front-wet-split-3": {
+      "id": "w-option3-front-wet-split-3",
+      "startNodeId": "n-option3-front-partition-right-1",
+      "endNodeId": "n-option3-front-wet-split-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-front-wet-split-4": {
+      "id": "w-option3-front-wet-split-4",
+      "startNodeId": "n-option3-front-wet-split-2",
+      "endNodeId": "n-option3-front-partition-right-2",
+      "thicknessUm": 114300
+    },
+    "w-option3-front-wet-split-5": {
+      "id": "w-option3-front-wet-split-5",
+      "startNodeId": "n-option3-front-wet-split-1",
+      "endNodeId": "n-option3-front-wet-split-2",
+      "thicknessUm": 114300
+    }
+  }
+}

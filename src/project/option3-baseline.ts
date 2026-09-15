@@ -1,5 +1,6 @@
 import { createOption3Site } from "../core/site.js";
 import type { LegacyEditorStateV1, ProjectV2 } from "./schema.js";
+import { createOption3TopologyV2 } from "./option3-topology.js";
 
 export const OPTION_3_REFERENCE_SHA256 = "56dbc61d59013c5f5247af5f684059097bb233da960379551b78c58f7ef01a37";
 
@@ -47,7 +48,7 @@ export function createOption3ProjectV2(legacyState: LegacyEditorStateV1 = OPTION
       status: "deferredToTopologyA2",
       coverageStatus: "deferredToExteriorEnvelopeA4",
     },
-    topology: deferredModel("A2"),
+    topology: createOption3TopologyV2(),
     spaces: deferredModel("A2"),
     openings: deferredModel("postA2"),
     dimensions: deferredModel("A2"),

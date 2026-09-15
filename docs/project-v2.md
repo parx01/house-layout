@@ -15,9 +15,9 @@ ProjectV2
 │  ├─ supplied 66% coverage rule
 │  └─ editable design setbacks
 ├─ building
-│  ├─ topology: deferred to A2
+│  ├─ physical topology: active in the Option-3 A2.3 baseline
 │  └─ authoritative footprint coverage: deferred to A4
-├─ topology: deferred slot or canonical A2.1 node/wall graph
+├─ topology: canonical A2.1 node/wall graph (active in the normal Option-3 baseline)
 ├─ spaces: deferred versioned-model slot
 ├─ openings: deferred versioned-model slot
 ├─ dimensions: deferred versioned-model slot
@@ -29,6 +29,8 @@ ProjectV2
 ## Schema-evolution policy
 
 `schemaVersion: 2` has an explicit `schemaRevision: 2`. Four future-model keys remain stable deferred envelopes with `status: "deferred"`, a target stage, and `modelVersion: null` / `data: null`. A2.1 activates the already-reserved topology key with a separately versioned and strictly validated canonical node/wall graph. It does not add a ProjectV2 top-level key or reinterpret the legacy editor rectangles as topology.
+
+A2.3 uses that existing revision-2 topology alternative without changing the ProjectV2 shape: new Option-3 projects and recovered V1 projects receive the curated active graph, while already-saved revision-2 documents preserve whichever valid deferred/empty/active topology they contain. The legacy `building.status` literal remains unchanged for revision-2 compatibility; topology authority is determined by the validated `topology.status` and model payload.
 
 The original A1 ProjectV2 documents had no `schemaRevision`, future-model slots, or road-width provenance. The loader recognizes exactly that frozen top-level shape as revision 1 and performs a one-way revision-1-to-revision-2 normalization. Unknown fields and unknown explicit revisions remain errors. Automated coverage preserves an A1-shaped save, reloads it, verifies all deferred slots, and round-trips the normalized document.
 
