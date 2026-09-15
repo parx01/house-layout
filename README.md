@@ -40,7 +40,7 @@ The visible **1,969.11 sq ft** covered-area number is explicitly a legacy rectan
 
 - `src/core`: branded integer unit helpers, geometry primitives, site calculations, design envelopes, and warning categories.
 - `src/project`: ProjectV2 types, strict validation, and the Option-3 baseline.
-- `src/topology`: canonical node/wall graph, structural validation, and A2.2 atomic intersection/splitting operations.
+- `src/topology`: canonical node/wall graph, structural validation, A2.2 insertion/splitting, and A2.5 transactional movement operations.
 - `src/spaces`: A2.4 renderer-independent, derived bounded-face extraction from canonical topology.
 - `src/persistence`: schema detection, V1 recovery wrapping, ProjectV2 serialization, and browser storage.
 - `src/ui`: the adapter that keeps the existing rectangle editor inspectable.
@@ -67,6 +67,8 @@ A2.3 builds the Option-3 physical wall graph through those A2.2 operations and a
 A2.3.1 prevents that graph from becoming stale while the legacy rectangle UI remains active. Geometry edits demote topology, presentation-only changes preserve it, arbitrary V1 projects do not receive the stock graph, and active geometry must remain inside the current site. The dev-only overlay can be regenerated with `npm run diagnostic:topology-overlay`; see `docs/topology-a2-3-1.md`.
 
 A2.4 deterministically derives 13 bounded faces for Option-3 from directed wall half-edges. Faces and exact areas are runtime products rather than persisted duplicate geometry; semantic rooms remain deferred. See `docs/topology-a2-4.md`.
+
+A2.5 adds pure perpendicular wall-run and orthogonality-preserving junction movement. Candidate copies must pass topology validation and retain the same A2.4 face boundaries before they are returned; no production dragging or persistence change is included. See `docs/topology-a2-5.md`.
 
 ## Construction note
 
