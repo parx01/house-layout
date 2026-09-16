@@ -61,7 +61,8 @@ export interface SemanticSpaceUnderstanding {
     readonly surroundingWallIds: readonly WallId[];
     readonly walls: readonly ArchitecturalWallUnderstanding[];
     readonly adjacentSpaces: readonly AdjacentSemanticSpace[];
-    readonly boundaryWallIds: readonly WallId[];
+    /** Walls with no semantic space on the opposite face; not an exterior-wall classification. */
+    readonly wallsWithoutSemanticNeighbor: readonly WallId[];
     readonly clearGeometry: ClearGeometryUnderstanding;
     readonly labelAnchor: ArchitecturalPoint & {
         readonly basis: "largestClearInteriorRectangle" | "centreLineInteriorFallback";

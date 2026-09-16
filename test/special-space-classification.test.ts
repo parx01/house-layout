@@ -4,6 +4,7 @@ import { createOption3SpecialSpaceClassificationMarkdown } from "../src/dev/opti
 import { parseProjectJson, serializeProject } from "../src/persistence/project-storage.js";
 import { createOption3ProjectV2 } from "../src/project/option3-baseline.js";
 import { createOption3SemanticSpacesV2 } from "../src/project/option3-semantic-spaces.js";
+import { validateA3CompleteProjectV2 } from "../src/project/validation.js";
 import { deriveArchitecturalUnderstanding } from "../src/spaces/architectural-understanding.js";
 import { extractBoundedFaces } from "../src/spaces/extract-faces.js";
 import {
@@ -127,6 +128,7 @@ describe("A3.5 special architectural space semantics", () => {
     expect(migrated.spaces.spaces.every((space) =>
       space.architecturalRole === "unclassified" && space.enclosure === "unclassified")).toBe(true);
     expect(parseProjectJson(serializeProject(migrated))).toEqual(migrated);
+    expect(() => validateA3CompleteProjectV2(migrated)).toThrow("is not A3-complete; unclassified spaces");
   });
 
   it("classifies every curated Option-3 space explicitly without inventing an open-to-sky face", () => {

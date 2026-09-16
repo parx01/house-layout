@@ -78,6 +78,29 @@ export function validateSemanticSpacesV2(value, topology, path = "spaces") {
     });
     return { status: "active", modelVersion: 2, spaces };
 }
+/**
+ * Validates the stronger A3-closure contract required before deriving a fully
+ * understood architectural model. Historical migrations may remain
+ * structurally active with explicit `unclassified` values; they must not pass
+ * this gate until a human completes their classification.
+ */
+export function validateCompleteSemanticSpacesV2(value, topology, path = "spaces") {
+    const spaces = validateSemanticSpacesV2(value, topology, path);
+    const boundedFaceIds = extractBoundedFaces(topology).faces.map((face) => face.id).sort();
+    const claimedFaceIds = new Set(spaces.spaces.map((space) => space.faceId));
+    const unclaimedFaceIds = boundedFaceIds.filter((identity) => !claimedFaceIds.has(identity));
+    if (unclaimedFaceIds.length > 0) {
+        fail(`${path} does not claim every bounded face; unclaimed faces: ${unclaimedFaceIds.join(", ")}.`);
+    }
+    const unclassifiedSpaceIds = spaces.spaces
+        .filter((space) => space.architecturalRole === "unclassified" || space.enclosure === "unclassified")
+        .map((space) => space.id)
+        .sort();
+    if (unclassifiedSpaceIds.length > 0) {
+        fail(`${path} is not A3-complete; unclassified spaces: ${unclassifiedSpaceIds.join(", ")}.`);
+    }
+    return spaces;
+}
 /** Revision-safe migration. Unknown V1 intent stays explicit instead of being guessed from category/name. */
 export function migrateSemanticSpacesV1ToV2(value, topology, path = "spaces") {
     const previous = validateSemanticSpacesV1(value, topology, path);

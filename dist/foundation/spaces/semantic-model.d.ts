@@ -43,6 +43,13 @@ export declare function spaceId(value: string): SpaceId;
  */
 export declare function validateSemanticSpacesV1(value: unknown, topology: TopologyV2, path?: string): SemanticSpacesV1;
 export declare function validateSemanticSpacesV2(value: unknown, topology: TopologyV2, path?: string): SemanticSpacesV2;
+/**
+ * Validates the stronger A3-closure contract required before deriving a fully
+ * understood architectural model. Historical migrations may remain
+ * structurally active with explicit `unclassified` values; they must not pass
+ * this gate until a human completes their classification.
+ */
+export declare function validateCompleteSemanticSpacesV2(value: unknown, topology: TopologyV2, path?: string): SemanticSpacesV2;
 /** Revision-safe migration. Unknown V1 intent stays explicit instead of being guessed from category/name. */
 export declare function migrateSemanticSpacesV1ToV2(value: unknown, topology: TopologyV2, path?: string): SemanticSpacesV2;
 export {};

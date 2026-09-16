@@ -3,7 +3,7 @@ import { extractBoundedFaces } from "../spaces/extract-faces.js";
 import { faceId, type FaceId } from "../spaces/model.js";
 import {
   spaceId,
-  validateSemanticSpacesV2,
+  validateCompleteSemanticSpacesV2,
   type ArchitecturalSpaceRole,
   type SemanticSpacesV2,
   type SpaceCategory,
@@ -156,7 +156,7 @@ export const OPTION_3_CURATED_SPACE_BINDINGS: readonly CuratedOption3SpaceBindin
 
 export function createOption3SemanticSpacesV2(): SemanticSpacesV2 {
   const topology = createOption3TopologyV2();
-  return validateSemanticSpacesV2(
+  return validateCompleteSemanticSpacesV2(
     {
       status: "active",
       modelVersion: 2,

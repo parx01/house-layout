@@ -1,5 +1,5 @@
 import { areaUm2, lengthUm, umToLegacyMm } from "../core/units.js";
-import { migrateSemanticSpacesV1ToV2, validateSemanticSpacesV2, } from "../spaces/semantic-model.js";
+import { migrateSemanticSpacesV1ToV2, validateCompleteSemanticSpacesV2, validateSemanticSpacesV2, } from "../spaces/semantic-model.js";
 import { validateTopologyV2 } from "../topology/validation.js";
 import { isOption3BaselineLegacyGeometry } from "./option3-baseline.js";
 export class ProjectValidationError extends Error {
@@ -229,6 +229,21 @@ function validateCrossModelTopology(site, topology) {
         if (bandOutside)
             fail(`project.topology wall ${wall.id} thickness band lies outside the current site boundary.`);
     }
+}
+/**
+ * Strong A3 closure gate. The ordinary validator remains migration-safe for
+ * historical revision-4/5 files whose unknown roles are explicitly preserved
+ * as `unclassified`; callers requiring complete architectural understanding
+ * must use this validator.
+ */
+export function validateA3CompleteProjectV2(value) {
+    const project = validateProjectV2(value);
+    if (project.topology.status !== "active")
+        fail("project.topology must be active for an A3-complete project.");
+    if (project.spaces.status !== "active")
+        fail("project.spaces must be active for an A3-complete project.");
+    validateCompleteSemanticSpacesV2(project.spaces, project.topology, "project.spaces");
+    return project;
 }
 function validateDeferredModel(value, path, targetStage) {
     const model = record(value, path);

@@ -9,6 +9,7 @@ import { validateProjectV2 } from "../src/project/validation.js";
 import { extractBoundedFaces } from "../src/spaces/extract-faces.js";
 import {
   spaceId,
+  validateCompleteSemanticSpacesV2,
   validateSemanticSpacesV1,
   type SemanticSpaceV1,
   type SemanticSpaceV2,
@@ -99,6 +100,32 @@ describe("A3.1 persistent semantic spaces", () => {
     orphaned.spaces[0].faceId = "f-0000000000000000";
     expect(() => validateSemanticSpacesV1(orphaned, twoRoomSharedWallTopology()))
       .toThrow("references orphaned derived face f-0000000000000000");
+  });
+
+  it("requires exclusive ownership of every bounded face at the A3-complete gate", () => {
+    const topology = twoRoomSharedWallTopology();
+    const complete = {
+      status: "active",
+      modelVersion: 2,
+      spaces: syntheticSpaces().spaces.map((space) => ({
+        ...space,
+        architecturalRole: "ordinaryRoom",
+        enclosure: "enclosedCovered",
+      })),
+    } as const;
+    expect(validateCompleteSemanticSpacesV2(complete, topology).spaces).toHaveLength(2);
+
+    const partial = { ...complete, spaces: [complete.spaces[0]!] };
+    expect(() => validateCompleteSemanticSpacesV2(partial, topology)).toThrow(
+      "does not claim every bounded face",
+    );
+
+    const unclassified = structuredClone(complete) as any;
+    unclassified.spaces[0].architecturalRole = "unclassified";
+    unclassified.spaces[0].enclosure = "unclassified";
+    expect(() => validateCompleteSemanticSpacesV2(unclassified, topology)).toThrow(
+      "is not A3-complete; unclassified spaces: s-west",
+    );
   });
 
   it("round-trips an active semantic model without persisting face geometry", () => {

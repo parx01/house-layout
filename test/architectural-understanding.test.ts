@@ -29,8 +29,8 @@ function spacesFor(topology: TopologyV2, ids?: readonly string[]): SemanticSpace
       id: spaceId(ids?.[index] ?? `s-test-${index + 1}`),
       name: ids?.[index] ?? `Test ${index + 1}`,
       category: "other",
-      architecturalRole: "unclassified",
-      enclosure: "unclassified",
+      architecturalRole: "ordinaryRoom",
+      enclosure: "enclosedCovered",
       faceId: face.id,
     })),
   };
@@ -108,17 +108,16 @@ describe("A3.4 architectural understanding", () => {
     expect(result.spaces[0]!.adjacentSpaces).toEqual([{ spaceId: "s-east", wallIds: ["w-shared"] }]);
     expect(result.spaces[1]!.adjacentSpaces).toEqual([{ spaceId: "s-west", wallIds: ["w-shared"] }]);
     expect(Object.keys(topology.walls).filter((identity) => identity === "w-shared")).toHaveLength(1);
-    expect(result.spaces.every((space) => !space.boundaryWallIds.includes(wallId("w-shared")))).toBe(true);
+    expect(result.spaces.every((space) => !space.wallsWithoutSemanticNeighbor.includes(wallId("w-shared")))).toBe(true);
   });
 
-  it("treats a wall to an unclaimed face as having no adjacent semantic space", () => {
+  it("does not treat an unclaimed face as a complete architectural understanding", () => {
     const topology = twoRoomSharedWallTopology();
     const allSpaces = spacesFor(topology, ["s-west", "s-east"]);
     const westOnly = { ...allSpaces, spaces: [allSpaces.spaces[0]!] } satisfies SemanticSpacesV2;
-    const result = deriveArchitecturalUnderstanding(topology, westOnly);
-    expect(result.spaces[0]!.adjacentSpaces).toEqual([]);
-    expect(result.spaces[0]!.boundaryWallIds).toContain("w-shared");
-    expect(result.unclaimedFaceIds).toHaveLength(1);
+    expect(() => deriveArchitecturalUnderstanding(topology, westOnly)).toThrow(
+      "does not claim every bounded face",
+    );
   });
 
   it("returns clear spans instead of inventing width × depth for an L-shaped space", () => {
@@ -162,23 +161,23 @@ describe("A3.4 architectural understanding", () => {
       widthUm: space.clearGeometry.status === "simpleRectangle" ? space.clearGeometry.widthUm : null,
       depthUm: space.clearGeometry.status === "simpleRectangle" ? space.clearGeometry.depthUm : null,
       adjacentSpaceIds: space.adjacentSpaces.map((adjacent) => adjacent.spaceId),
-      boundaryWallCount: space.boundaryWallIds.length,
+      wallsWithoutSemanticNeighborCount: space.wallsWithoutSemanticNeighbor.length,
       anchor: [space.labelAnchor.xUm, space.labelAnchor.yUm],
     }));
     expect(summary).toEqual([
-      { id: "s-bedroom-1", centreLineAreaUm2: 19617036140000, clearAreaUm2: 18124109547500, status: "simpleRectangle", widthUm: 3963850, depthUm: 4572350, adjacentSpaceIds: ["s-dress-1", "s-lobby-dining-puja", "s-toilet-1"], boundaryWallCount: 2, anchor: [3661925, 5566175] },
-      { id: "s-toilet-1", centreLineAreaUm2: 5230339425000, clearAreaUm2: 4609124640000, status: "simpleRectangle", widthUm: 1680200, depthUm: 2743200, adjacentSpaceIds: ["s-bedroom-1", "s-dress-1", "s-toilet-2"], boundaryWallCount: 1, anchor: [6598250, 4651600] },
-      { id: "s-dress-1", centreLineAreaUm2: 3282409675000, clearAreaUm2: 2881290970000, status: "simpleRectangle", widthUm: 1680200, depthUm: 1714850, adjacentSpaceIds: ["s-bedroom-1", "s-dress-2", "s-lobby-dining-puja", "s-toilet-1"], boundaryWallCount: 0, anchor: [6598250, 6994925] },
-      { id: "s-toilet-2", centreLineAreaUm2: 5256571275000, clearAreaUm2: 4633813440000, status: "simpleRectangle", widthUm: 1689200, depthUm: 2743200, adjacentSpaceIds: ["s-bedroom-2", "s-dress-2", "s-toilet-1"], boundaryWallCount: 1, anchor: [8397250, 4651600] },
-      { id: "s-dress-2", centreLineAreaUm2: 3298872025000, clearAreaUm2: 2896724620000, status: "simpleRectangle", widthUm: 1689200, depthUm: 1714850, adjacentSpaceIds: ["s-bedroom-2", "s-dress-1", "s-lobby-dining-puja", "s-toilet-2"], boundaryWallCount: 0, anchor: [8397250, 6994925] },
-      { id: "s-bedroom-2", centreLineAreaUm2: 19617036140000, clearAreaUm2: 18124109547500, status: "simpleRectangle", widthUm: 3963850, depthUm: 4572350, adjacentSpaceIds: ["s-dress-2", "s-lobby-dining-puja", "s-toilet-2"], boundaryWallCount: 2, anchor: [11338075, 5566175] },
-      { id: "s-lobby-dining-puja", centreLineAreaUm2: 59030851840000, clearAreaUm2: 56544132467500, status: "notSimpleRectangle", widthUm: null, depthUm: null, adjacentSpaceIds: ["s-bedroom-1", "s-bedroom-2", "s-dress-1", "s-dress-2", "s-guest-bedroom", "s-kitchen", "s-living-room", "s-staircase", "s-wash-area"], boundaryWallCount: 2, anchor: [9082825, 11018000] },
-      { id: "s-kitchen", centreLineAreaUm2: 10950107560000, clearAreaUm2: 10018802590000, status: "simpleRectangle", widthUm: 3051350, depthUm: 3283400, adjacentSpaceIds: ["s-lobby-dining-puja", "s-staircase"], boundaryWallCount: 1, anchor: [3205675, 11246650] },
-      { id: "s-staircase", centreLineAreaUm2: 10005182600000, clearAreaUm2: 8949762117500, status: "simpleRectangle", widthUm: 3051350, depthUm: 2933050, adjacentSpaceIds: ["s-kitchen", "s-living-room", "s-lobby-dining-puja"], boundaryWallCount: 2, anchor: [3205675, 14469175] },
-      { id: "s-living-room", centreLineAreaUm2: 16446188850000, clearAreaUm2: 15329169240000, status: "simpleRectangle", widthUm: 3352800, depthUm: 4572050, adjacentSpaceIds: ["s-lobby-dining-puja", "s-staircase", "s-toilet-3", "s-wash-area"], boundaryWallCount: 2, anchor: [6522050, 16469675] },
-      { id: "s-wash-area", centreLineAreaUm2: 2496769200000, clearAreaUm2: 2148382800000, status: "simpleRectangle", widthUm: 1524000, depthUm: 1409700, adjacentSpaceIds: ["s-guest-bedroom", "s-living-room", "s-lobby-dining-puja", "s-toilet-3"], boundaryWallCount: 0, anchor: [9074750, 14888500] },
-      { id: "s-toilet-3", centreLineAreaUm2: 5274506850000, clearAreaUm2: 4645228200000, status: "simpleRectangle", widthUm: 1524000, depthUm: 3048050, adjacentSpaceIds: ["s-guest-bedroom", "s-living-room", "s-wash-area"], boundaryWallCount: 1, anchor: [9074750, 17231675] },
-      { id: "s-guest-bedroom", centreLineAreaUm2: 16793887400000, clearAreaUm2: 15403007847500, status: "simpleRectangle", widthUm: 3368950, depthUm: 4572050, adjacentSpaceIds: ["s-lobby-dining-puja", "s-toilet-3", "s-wash-area"], boundaryWallCount: 2, anchor: [11635525, 16469675] },
+      { id: "s-bedroom-1", centreLineAreaUm2: 19617036140000, clearAreaUm2: 18124109547500, status: "simpleRectangle", widthUm: 3963850, depthUm: 4572350, adjacentSpaceIds: ["s-dress-1", "s-lobby-dining-puja", "s-toilet-1"], wallsWithoutSemanticNeighborCount: 2, anchor: [3661925, 5566175] },
+      { id: "s-toilet-1", centreLineAreaUm2: 5230339425000, clearAreaUm2: 4609124640000, status: "simpleRectangle", widthUm: 1680200, depthUm: 2743200, adjacentSpaceIds: ["s-bedroom-1", "s-dress-1", "s-toilet-2"], wallsWithoutSemanticNeighborCount: 1, anchor: [6598250, 4651600] },
+      { id: "s-dress-1", centreLineAreaUm2: 3282409675000, clearAreaUm2: 2881290970000, status: "simpleRectangle", widthUm: 1680200, depthUm: 1714850, adjacentSpaceIds: ["s-bedroom-1", "s-dress-2", "s-lobby-dining-puja", "s-toilet-1"], wallsWithoutSemanticNeighborCount: 0, anchor: [6598250, 6994925] },
+      { id: "s-toilet-2", centreLineAreaUm2: 5256571275000, clearAreaUm2: 4633813440000, status: "simpleRectangle", widthUm: 1689200, depthUm: 2743200, adjacentSpaceIds: ["s-bedroom-2", "s-dress-2", "s-toilet-1"], wallsWithoutSemanticNeighborCount: 1, anchor: [8397250, 4651600] },
+      { id: "s-dress-2", centreLineAreaUm2: 3298872025000, clearAreaUm2: 2896724620000, status: "simpleRectangle", widthUm: 1689200, depthUm: 1714850, adjacentSpaceIds: ["s-bedroom-2", "s-dress-1", "s-lobby-dining-puja", "s-toilet-2"], wallsWithoutSemanticNeighborCount: 0, anchor: [8397250, 6994925] },
+      { id: "s-bedroom-2", centreLineAreaUm2: 19617036140000, clearAreaUm2: 18124109547500, status: "simpleRectangle", widthUm: 3963850, depthUm: 4572350, adjacentSpaceIds: ["s-dress-2", "s-lobby-dining-puja", "s-toilet-2"], wallsWithoutSemanticNeighborCount: 2, anchor: [11338075, 5566175] },
+      { id: "s-lobby-dining-puja", centreLineAreaUm2: 59030851840000, clearAreaUm2: 56544132467500, status: "notSimpleRectangle", widthUm: null, depthUm: null, adjacentSpaceIds: ["s-bedroom-1", "s-bedroom-2", "s-dress-1", "s-dress-2", "s-guest-bedroom", "s-kitchen", "s-living-room", "s-staircase", "s-wash-area"], wallsWithoutSemanticNeighborCount: 2, anchor: [9082825, 11018000] },
+      { id: "s-kitchen", centreLineAreaUm2: 10950107560000, clearAreaUm2: 10018802590000, status: "simpleRectangle", widthUm: 3051350, depthUm: 3283400, adjacentSpaceIds: ["s-lobby-dining-puja", "s-staircase"], wallsWithoutSemanticNeighborCount: 1, anchor: [3205675, 11246650] },
+      { id: "s-staircase", centreLineAreaUm2: 10005182600000, clearAreaUm2: 8949762117500, status: "simpleRectangle", widthUm: 3051350, depthUm: 2933050, adjacentSpaceIds: ["s-kitchen", "s-living-room", "s-lobby-dining-puja"], wallsWithoutSemanticNeighborCount: 2, anchor: [3205675, 14469175] },
+      { id: "s-living-room", centreLineAreaUm2: 16446188850000, clearAreaUm2: 15329169240000, status: "simpleRectangle", widthUm: 3352800, depthUm: 4572050, adjacentSpaceIds: ["s-lobby-dining-puja", "s-staircase", "s-toilet-3", "s-wash-area"], wallsWithoutSemanticNeighborCount: 2, anchor: [6522050, 16469675] },
+      { id: "s-wash-area", centreLineAreaUm2: 2496769200000, clearAreaUm2: 2148382800000, status: "simpleRectangle", widthUm: 1524000, depthUm: 1409700, adjacentSpaceIds: ["s-guest-bedroom", "s-living-room", "s-lobby-dining-puja", "s-toilet-3"], wallsWithoutSemanticNeighborCount: 0, anchor: [9074750, 14888500] },
+      { id: "s-toilet-3", centreLineAreaUm2: 5274506850000, clearAreaUm2: 4645228200000, status: "simpleRectangle", widthUm: 1524000, depthUm: 3048050, adjacentSpaceIds: ["s-guest-bedroom", "s-living-room", "s-wash-area"], wallsWithoutSemanticNeighborCount: 1, anchor: [9074750, 17231675] },
+      { id: "s-guest-bedroom", centreLineAreaUm2: 16793887400000, clearAreaUm2: 15403007847500, status: "simpleRectangle", widthUm: 3368950, depthUm: 4572050, adjacentSpaceIds: ["s-lobby-dining-puja", "s-toilet-3", "s-wash-area"], wallsWithoutSemanticNeighborCount: 2, anchor: [11635525, 16469675] },
     ]);
     expect(result.sharedWalls).toHaveLength(25);
     expect(result.unclaimedFaceIds).toEqual([]);

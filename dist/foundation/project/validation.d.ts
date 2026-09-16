@@ -9,6 +9,13 @@ export declare class UnsupportedProjectVersionError extends Error {
 export declare function validateLegacyEditorStateV1(value: unknown, path?: string): LegacyEditorStateV1;
 export declare function validateProjectV2(value: unknown): ProjectV2;
 /**
+ * Strong A3 closure gate. The ordinary validator remains migration-safe for
+ * historical revision-4/5 files whose unknown roles are explicitly preserved
+ * as `unclassified`; callers requiring complete architectural understanding
+ * must use this validator.
+ */
+export declare function validateA3CompleteProjectV2(value: unknown): ProjectV2;
+/**
  * ProjectV2 A1 files predate schemaRevision and the reserved model slots. This
  * explicit one-way normalization keeps those saves recoverable without treating
  * the legacy room rectangles as topology.

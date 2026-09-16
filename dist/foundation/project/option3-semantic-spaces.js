@@ -1,7 +1,7 @@
 import { formatSquareFeet } from "../core/units.js";
 import { extractBoundedFaces } from "../spaces/extract-faces.js";
 import { faceId } from "../spaces/model.js";
-import { spaceId, validateSemanticSpacesV2, } from "../spaces/semantic-model.js";
+import { spaceId, validateCompleteSemanticSpacesV2, } from "../spaces/semantic-model.js";
 import { createOption3TopologyV2 } from "./option3-topology.js";
 /**
  * Deliberate A3.2 bindings for the one curated Option-3 baseline. Face IDs are
@@ -24,7 +24,7 @@ export const OPTION_3_CURATED_SPACE_BINDINGS = [
 ];
 export function createOption3SemanticSpacesV2() {
     const topology = createOption3TopologyV2();
-    return validateSemanticSpacesV2({
+    return validateCompleteSemanticSpacesV2({
         status: "active",
         modelVersion: 2,
         spaces: OPTION_3_CURATED_SPACE_BINDINGS.map(({ id, name, category, architecturalRole, enclosure, faceId: boundFaceId }) => ({

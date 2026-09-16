@@ -1,14 +1,14 @@
 import { getWallEndNode, getWallLength, getWallStartNode, } from "../topology/model.js";
 import { validateTopologyV2 } from "../topology/validation.js";
 import { extractBoundedFaces } from "./extract-faces.js";
-import { validateSemanticSpacesV2, } from "./semantic-model.js";
+import { validateCompleteSemanticSpacesV2, } from "./semantic-model.js";
 /**
  * Pure runtime derivation from canonical topology, A2.4 faces, and A3 spaces.
  * No result from this function is persisted as architectural source geometry.
  */
 export function deriveArchitecturalUnderstanding(topologyValue, spacesValue) {
     const topology = validateTopologyV2(topologyValue, "architecturalUnderstanding.topology");
-    const spaces = validateSemanticSpacesV2(spacesValue, topology, "architecturalUnderstanding.spaces");
+    const spaces = validateCompleteSemanticSpacesV2(spacesValue, topology, "architecturalUnderstanding.spaces");
     const faces = extractBoundedFaces(topology).faces;
     const facesById = new Map(faces.map((face) => [face.id, face]));
     const spacesByFaceId = new Map(spaces.spaces.map((space) => [space.faceId, space]));
@@ -28,11 +28,11 @@ export function deriveArchitecturalUnderstanding(topologyValue, spacesValue) {
         const face = facesById.get(space.faceId);
         const surroundingWallIds = face.boundary.map((edge) => edge.wallId);
         const adjacentBySpaceId = new Map();
-        const boundaryWallIds = [];
+        const wallsWithoutSemanticNeighbor = [];
         for (const wallIdentity of surroundingWallIds) {
             const adjacentIds = (semanticSpaceIdsByWallId.get(wallIdentity) ?? []).filter((identity) => identity !== space.id);
             if (adjacentIds.length === 0) {
-                boundaryWallIds.push(wallIdentity);
+                wallsWithoutSemanticNeighbor.push(wallIdentity);
                 continue;
             }
             for (const adjacentId of adjacentIds) {
@@ -60,7 +60,7 @@ export function deriveArchitecturalUnderstanding(topologyValue, spacesValue) {
             adjacentSpaces: [...adjacentBySpaceId.entries()]
                 .map(([spaceIdValue, wallIds]) => ({ spaceId: spaceIdValue, wallIds: [...wallIds].sort() }))
                 .sort((left, right) => left.spaceId.localeCompare(right.spaceId)),
-            boundaryWallIds: [...boundaryWallIds].sort(),
+            wallsWithoutSemanticNeighbor: [...wallsWithoutSemanticNeighbor].sort(),
             clearGeometry: describeClearGeometry(clearRegion),
             labelAnchor: labelAnchor(face, clearRegion),
         };
