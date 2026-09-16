@@ -5,7 +5,7 @@ const html = readFileSync(new URL("../dist/index.html", import.meta.url), "utf8"
 const css = readFileSync(new URL("../dist/styles.css", import.meta.url), "utf8");
 const app = readFileSync(new URL("../dist/app.js", import.meta.url), "utf8");
 
-describe("B1 topology-native read-only selection UI contract", () => {
+describe("B1/B2 topology-native selection and drag UI contract", () => {
   it("places topology faces beneath physical walls and canonical junctions", () => {
     const orderedLayerIds = [
       'id="grid-layer"',
@@ -23,7 +23,7 @@ describe("B1 topology-native read-only selection UI contract", () => {
   });
 
   it("renders only canonical topology and derived face geometry by default", () => {
-    expect(app).toContain("createTopologySvgRenderModel(project.topology)");
+    expect(app).toContain("createTopologySvgRenderModel(renderProject.topology)");
     expect(app).toContain('svg.dataset.geometrySource = topologyRenderModel ? "canonical-topology" : "topology-deferred"');
     expect(app).toContain('class: "topology-wall-band"');
     expect(app).toContain('"stroke-width": wall.strokeWidth');
@@ -39,7 +39,7 @@ describe("B1 topology-native read-only selection UI contract", () => {
     expect(app).toContain('copy.querySelector("#legacy-comparison-layer")?.remove()');
   });
 
-  it("routes pointer selection through canonical hit testing without exposing geometry edits", () => {
+  it("routes pointer selection through canonical hit testing and B2 canonical dragging", () => {
     expect(app).toContain("createCanonicalHitTestModel");
     expect(app).toContain("hitTestCanonicalSelection");
     expect(app).toContain('"data-action": "select-canonical-space"');
@@ -47,6 +47,11 @@ describe("B1 topology-native read-only selection UI contract", () => {
     expect(app).toContain('"data-action": "select-canonical-node"');
     expect(app).toContain('svg.addEventListener("pointermove"');
     expect(app).toContain('svg.addEventListener("pointerleave"');
+    expect(app).toContain('svg.addEventListener("pointerup"');
+    expect(app).toContain('svg.addEventListener("pointercancel"');
+    expect(app).toContain("CanonicalDragController.begin");
+    expect(app).toContain("exceedsDragActivationThreshold");
+    expect(app).toContain("svg.setPointerCapture(event.pointerId)");
     expect(css).toContain(".topology-wall-hit");
     expect(css).toContain(".topology-junction-hit");
     expect(css).toContain(".topology-wall-group.hovered");
@@ -58,6 +63,23 @@ describe("B1 topology-native read-only selection UI contract", () => {
     expect(app).not.toContain("state.rooms.push");
     expect(app).not.toContain("state.walls.push");
     expect(app).not.toContain("Date.now()");
+  });
+
+  it("keeps preview geometry separate and records one B0 before/after change", () => {
+    expect(app).toContain("let previewProject = null");
+    expect(app).toContain("return previewProject ?? project");
+    expect(app).toContain("recordUndoableProjectChange(finished.result.undoableChange)");
+    expect(app).not.toContain("pushHistory();\n    const result = activeDrag.controller.preview");
+    expect(app).toContain('cancelActiveDrag("escape")');
+    expect(app).toContain('cancelActiveDrag("pointerCancel")');
+  });
+
+  it("exposes valid, invalid, and footprint-affecting feedback without exporting it", () => {
+    expect(css).toContain("#plan-svg.dragging-valid");
+    expect(css).toContain("#plan-svg.dragging-invalid");
+    expect(css).toContain("#plan-svg.footprint-affecting");
+    expect(css).toContain(".drag-invalid-marker");
+    expect(app).toContain('copy.classList.remove("dragging-valid", "dragging-invalid", "footprint-affecting")');
   });
 
   it("shows inspector-ready semantic and canonical display information", () => {

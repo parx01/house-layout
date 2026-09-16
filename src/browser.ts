@@ -8,6 +8,8 @@ export * from "./project/schema.js";
 export * from "./project/topology-update.js";
 export * from "./project/validation.js";
 export * from "./interaction/selection.js";
+export * from "./interaction/project-interaction.js";
+export * from "./interaction/canonical-drag.js";
 export * from "./spaces/extract-faces.js";
 export * from "./spaces/model.js";
 export * from "./spaces/semantic-model.js";

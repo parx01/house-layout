@@ -1,6 +1,8 @@
 import {
   areaToSquareFeet,
+  CanonicalDragController,
   calculateOption3CanvasViewBox,
+  clientPointToModelUm,
   clearCanonicalSelection,
   clearHoveredEntity,
   createCanonicalHitTestModel,
@@ -8,6 +10,7 @@ import {
   createOption3ProjectV2,
   createTopologySvgRenderModel,
   decimalFeetToLength,
+  exceedsDragActivationThreshold,
   formatArchitecturalLength,
   formatSquareFeet,
   foundationSummary,
@@ -43,6 +46,8 @@ let toastTimer;
 let showLegacyComparison = false;
 let topologyRenderModel = null;
 let selectionHitModel = null;
+let previewProject = null;
+let activeDrag = null;
 
 const svg = document.querySelector("#plan-svg");
 const faceLayer = document.querySelector("#face-layer");
@@ -99,6 +104,10 @@ function snapshot() {
   return { state: clone(state), project: clone(project) };
 }
 
+function displayedProject() {
+  return previewProject ?? project;
+}
+
 function pushHistory() {
   history.push(snapshot());
   if (history.length > 60) history.shift();
@@ -106,7 +115,16 @@ function pushHistory() {
   updateUndoButtons();
 }
 
+function recordUndoableProjectChange(change) {
+  history.push({ state: clone(state), project: clone(change.beforeProject) });
+  if (history.length > 60) history.shift();
+  future = [];
+  project = change.afterProject;
+  updateUndoButtons();
+}
+
 function undo() {
+  if (activeDrag) { cancelActiveDrag("explicit"); return; }
   if (!history.length) return;
   future.push(snapshot());
   ({ state, project } = history.pop());
@@ -115,6 +133,7 @@ function undo() {
 }
 
 function redo() {
+  if (activeDrag) { cancelActiveDrag("explicit"); return; }
   if (!future.length) return;
   history.push(snapshot());
   ({ state, project } = future.pop());
@@ -173,7 +192,7 @@ function unionArea(rectangles) {
 function coverageValues() {
   const roomArea = unionArea(state.rooms.filter((room) => room.included));
   const designed = roomArea + state.commonAreaMm2;
-  const siteSummary = foundationSummary(project);
+  const siteSummary = foundationSummary(displayedProject());
   const plot = siteSummary.plotAreaUm2 / 1_000_000;
   const max = siteSummary.maximumCoverageUm2 / 1_000_000;
   return {
@@ -189,6 +208,7 @@ function coverageValues() {
 }
 
 function renderSite() {
+  const renderProject = displayedProject();
   siteLayer.replaceChildren();
   const boundary = el("rect", {
     x: 0,
@@ -199,7 +219,7 @@ function renderSite() {
   });
   siteLayer.append(boundary);
 
-  const summary = foundationSummary(project);
+  const summary = foundationSummary(renderProject);
   const envelope = summary.minimumEnvelope;
   siteLayer.append(el("rect", {
     x: lengthUmToLegacyMm(envelope.xUm),
@@ -221,9 +241,9 @@ function renderSite() {
     y: state.site.depth - 420,
     class: "road-label",
   });
-  road.textContent = project.site.road.widthUm === null
+  road.textContent = renderProject.site.road.widthUm === null
     ? "ROAD · FRONT EDGE"
-    : `ROAD · ${formatArchitecturalLength(project.site.road.widthUm)} WIDE · PLAN NOTE`;
+    : `ROAD · ${formatArchitecturalLength(renderProject.site.road.widthUm)} WIDE · PLAN NOTE`;
   siteLayer.append(road);
 }
 
@@ -250,6 +270,7 @@ function renderSelectionVisuals() {
 }
 
 function renderTopologyFaces(model) {
+  const renderProject = displayedProject();
   faceLayer.replaceChildren();
   if (!model) {
     const message = el("text", {
@@ -262,8 +283,8 @@ function renderTopologyFaces(model) {
     return;
   }
   model.faces.forEach((face) => {
-    const space = project.spaces?.status === "active"
-      ? project.spaces.spaces.find((candidate) => candidate.faceId === face.id)
+    const space = renderProject.spaces?.status === "active"
+      ? renderProject.spaces.spaces.find((candidate) => candidate.faceId === face.id)
       : null;
     const attributes = {
       points: face.pointsAttribute,
@@ -371,6 +392,13 @@ function renderTopologyJunctions(model) {
 
 function renderHandles() {
   interactionLayer.replaceChildren();
+  if (!activeDrag?.activated || !activeDrag.currentModelPoint || activeDrag.latestStatus === "valid") return;
+  interactionLayer.append(el("circle", {
+    cx: activeDrag.currentModelPoint.xUm / 1_000,
+    cy: activeDrag.currentModelPoint.yUm / 1_000,
+    r: 135,
+    class: "drag-invalid-marker",
+  }));
 }
 
 function renderCoverage() {
@@ -390,7 +418,7 @@ function renderCoverage() {
 }
 
 function renderSelection() {
-  const resolved = resolveCanonicalSelection(project, selectionState.selected);
+  const resolved = resolveCanonicalSelection(displayedProject(), selectionState.selected);
   if (!resolved) {
     selectionForm.hidden = true;
     emptySelection.hidden = false;
@@ -415,7 +443,7 @@ function renderSelection() {
         ? "Exterior"
         : "Non-face boundary";
     selectionForm.innerHTML = `
-      <div><div class="selection-name">Physical wall</div><div class="selection-type">Canonical centre-line · read-only</div></div>
+      <div><div class="selection-name">Physical wall</div><div class="selection-type">Canonical centre-line · drag perpendicular</div></div>
       <div class="selection-field">Classification <span>${classification}</span></div>
       <div class="selection-field">Orientation <span>${escapeHtml(resolved.orientation)}</span></div>
       <div class="selection-field">Length <span>${escapeHtml(formatArchitecturalLength(resolved.lengthUm))}</span></div>
@@ -423,7 +451,7 @@ function renderSelection() {
       <p class="field-note">${escapeHtml(resolved.id)}<br>${escapeHtml(resolved.startNodeId)} → ${escapeHtml(resolved.endNodeId)}</p>`;
   } else {
     selectionForm.innerHTML = `
-      <div><div class="selection-name">Canonical junction</div><div class="selection-type">Shared node · read-only</div></div>
+      <div><div class="selection-name">Canonical junction</div><div class="selection-type">Shared node · drag to adjust</div></div>
       <div class="selection-field">Connected walls <span>${resolved.degree}</span></div>
       <div class="selection-field">X from origin <span>${escapeHtml(formatArchitecturalLength(resolved.xUm))}</span></div>
       <div class="selection-field">Y from origin <span>${escapeHtml(formatArchitecturalLength(resolved.yUm))}</span></div>
@@ -436,14 +464,15 @@ function escapeHtml(value) {
 }
 
 function render() {
-  selectionState = reconcileCanonicalSelection(selectionState, project);
-  topologyRenderModel = project.topology?.status === "active"
-    ? createTopologySvgRenderModel(project.topology)
+  const renderProject = displayedProject();
+  selectionState = reconcileCanonicalSelection(selectionState, renderProject);
+  topologyRenderModel = renderProject.topology?.status === "active"
+    ? createTopologySvgRenderModel(renderProject.topology)
     : null;
-  selectionHitModel = project.topology?.status === "active"
+  selectionHitModel = renderProject.topology?.status === "active"
     ? createCanonicalHitTestModel(
-        project.topology,
-        project.spaces?.status === "active" ? project.spaces : undefined,
+        renderProject.topology,
+        renderProject.spaces?.status === "active" ? renderProject.spaces : undefined,
       )
     : null;
   renderSite();
@@ -463,8 +492,8 @@ function render() {
   referenceImage.setAttribute("width", String(lengthUmToLegacyMm(OPTION_3_REFERENCE_WIDTH_UM)));
   referenceImage.setAttribute("height", String(lengthUmToLegacyMm(OPTION_3_REFERENCE_DEPTH_UM)));
   const viewBox = calculateOption3CanvasViewBox(
-    project.site.boundary.widthUm,
-    project.site.boundary.depthUm,
+    renderProject.site.boundary.widthUm,
+    renderProject.site.boundary.depthUm,
   );
   svg.setAttribute("viewBox", [
     lengthUmToLegacyMm(viewBox.xUm),
@@ -472,19 +501,19 @@ function render() {
     lengthUmToLegacyMm(viewBox.widthUm),
     lengthUmToLegacyMm(viewBox.depthUm),
   ].join(" "));
-  document.querySelector("#site-width").value = formatArchitecturalLength(project.site.boundary.widthUm);
-  document.querySelector("#site-depth").value = formatArchitecturalLength(project.site.boundary.depthUm);
+  document.querySelector("#site-width").value = formatArchitecturalLength(renderProject.site.boundary.widthUm);
+  document.querySelector("#site-depth").value = formatArchitecturalLength(renderProject.site.boundary.depthUm);
   document.querySelector("#common-area").value = (state.commonAreaMm2 / FT2_TO_MM2).toFixed(2);
-  document.querySelector("#left-target").value = formatArchitecturalLength(project.site.designSetbacks.leftUm);
-  document.querySelector("#right-target").value = formatArchitecturalLength(project.site.designSetbacks.rightUm);
-  document.querySelector("#rear-min-target").value = formatArchitecturalLength(project.site.designSetbacks.rearMinUm);
-  document.querySelector("#rear-preferred-target").value = formatArchitecturalLength(project.site.designSetbacks.rearPreferredUm);
-  document.querySelector("#front-target").value = project.site.designSetbacks.frontMinUm === null
+  document.querySelector("#left-target").value = formatArchitecturalLength(renderProject.site.designSetbacks.leftUm);
+  document.querySelector("#right-target").value = formatArchitecturalLength(renderProject.site.designSetbacks.rightUm);
+  document.querySelector("#rear-min-target").value = formatArchitecturalLength(renderProject.site.designSetbacks.rearMinUm);
+  document.querySelector("#rear-preferred-target").value = formatArchitecturalLength(renderProject.site.designSetbacks.rearPreferredUm);
+  document.querySelector("#front-target").value = renderProject.site.designSetbacks.frontMinUm === null
     ? "Flexible"
-    : formatArchitecturalLength(project.site.designSetbacks.frontMinUm);
-  document.querySelector("#north-status").textContent = project.site.orientation.northAngleDeg === null
+    : formatArchitecturalLength(renderProject.site.designSetbacks.frontMinUm);
+  document.querySelector("#north-status").textContent = renderProject.site.orientation.northAngleDeg === null
     ? "Not established"
-    : `${project.site.orientation.northAngleDeg}° clockwise from plan up`;
+    : `${renderProject.site.orientation.northAngleDeg}° clockwise from plan up`;
   document.querySelector("#show-reference").checked = state.reference.show;
   document.querySelector("#reference-opacity").value = Math.round(state.reference.opacity * 100);
   document.querySelector("#opacity-output").textContent = `${Math.round(state.reference.opacity * 100)}%`;
@@ -496,12 +525,13 @@ function render() {
   svg.dataset.wallCount = String(topologyRenderModel?.walls.length ?? 0);
   svg.dataset.junctionCount = String(topologyRenderModel?.junctions.length ?? 0);
   svg.dataset.tool = activeTool;
+  updateInteractionFeedback();
   updateUndoButtons();
 }
 
 function setTool(tool) {
   if (tool !== "select") {
-    showToast("Topology geometry is read-only in A2.6");
+    showToast("Wall and room creation remain deferred after B2");
     return;
   }
   activeTool = "select";
@@ -510,8 +540,8 @@ function setTool(tool) {
     button.classList.toggle("active", active);
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
-  document.querySelector("#canvas-title").textContent = "Inspect canonical topology";
-  document.querySelector("#canvas-hint").textContent = "Select semantic spaces, physical walls, and junctions · read-only";
+  document.querySelector("#canvas-title").textContent = "Adjust canonical topology";
+  document.querySelector("#canvas-hint").textContent = "Drag physical walls perpendicular to their axis or drag canonical junctions";
   renderHandles();
 }
 
@@ -519,6 +549,84 @@ function entityFromSelectionTarget(target) {
   const type = target?.dataset.selectionType;
   const id = target?.dataset.selectionId;
   return id && ["space", "wall", "node"].includes(type) ? { type, id } : null;
+}
+
+function modelPointFromPointer(event) {
+  const matrix = svg.getScreenCTM();
+  if (!matrix) return null;
+  return clientPointToModelUm(
+    { x: event.clientX, y: event.clientY },
+    matrix.inverse(),
+  );
+}
+
+function updateInteractionFeedback() {
+  svg.classList.remove("dragging-valid", "dragging-invalid", "footprint-affecting");
+  const hint = document.querySelector("#canvas-hint");
+  if (!activeDrag?.activated) {
+    hint.textContent = activeDrag
+      ? "Move at least 3 px to begin editing · release to keep the current selection"
+      : "Drag physical walls perpendicular to their axis or drag canonical junctions";
+    return;
+  }
+  if (activeDrag.latestStatus === "valid") {
+    svg.classList.add("dragging-valid");
+    if (activeDrag.footprintChanged) svg.classList.add("footprint-affecting");
+    hint.textContent = activeDrag.footprintChanged
+      ? "Valid preview · this edit changes the physical building footprint"
+      : "Valid preview · release to commit one undoable change";
+    return;
+  }
+  svg.classList.add("dragging-invalid");
+  hint.textContent = activeDrag.latestStatus === "remapRequired"
+    ? `Cannot commit: semantic remapping is required · ${activeDrag.latestReason}`
+    : `Invalid position · ${activeDrag.latestReason}`;
+}
+
+function releaseActivePointer(drag) {
+  if (svg.hasPointerCapture?.(drag.pointerId)) svg.releasePointerCapture(drag.pointerId);
+}
+
+function cancelActiveDrag(reason) {
+  const drag = activeDrag;
+  if (!drag) return;
+  if (drag.activated) drag.controller.cancel(reason);
+  releaseActivePointer(drag);
+  activeDrag = null;
+  previewProject = null;
+  selectionState = reconcileCanonicalSelection(selectionState, project);
+  render();
+  if (reason === "escape") showToast("Drag cancelled");
+}
+
+function finishActiveDrag() {
+  const drag = activeDrag;
+  if (!drag) return;
+  releaseActivePointer(drag);
+  if (!drag.activated) {
+    activeDrag = null;
+    previewProject = null;
+    render();
+    return;
+  }
+  const finished = drag.controller.commit();
+  activeDrag = null;
+  previewProject = null;
+  if (finished.status === "committed") {
+    recordUndoableProjectChange(finished.result.undoableChange);
+    selectionState = reconcileCanonicalSelection(selectionState, project);
+    render();
+    saveState();
+    showToast(finished.result.undoableChange.metadata.footprintChanged
+      ? "Edit committed · physical footprint changed"
+      : "Edit committed · footprint unchanged");
+    return;
+  }
+  selectionState = reconcileCanonicalSelection(selectionState, project);
+  render();
+  showToast(finished.failure?.status === "remapRequired"
+    ? "Edit cancelled · semantic remapping required"
+    : `Edit cancelled${finished.failure?.reason ? ` · ${finished.failure.reason}` : ""}`);
 }
 
 function hitTestPointer(event) {
@@ -541,6 +649,7 @@ function hitTestPointer(event) {
 }
 
 svg.addEventListener("pointerdown", (event) => {
+  if (event.button !== 0 || activeDrag) return;
   const hit = hitTestPointer(event);
   selectionState = hit
     ? selectCanonicalEntity(selectionState, hit.entity)
@@ -548,9 +657,50 @@ svg.addEventListener("pointerdown", (event) => {
   event.preventDefault();
   renderSelectionVisuals();
   renderSelection();
+  if (!hit || (hit.entity.type !== "wall" && hit.entity.type !== "node")) return;
+  const startModelPoint = modelPointFromPointer(event);
+  if (!startModelPoint) return;
+  activeDrag = {
+    pointerId: event.pointerId,
+    entity: hit.entity,
+    startClientPoint: { x: event.clientX, y: event.clientY },
+    startModelPoint,
+    currentModelPoint: startModelPoint,
+    activated: false,
+    controller: null,
+    latestStatus: null,
+    latestReason: "",
+    footprintChanged: false,
+  };
+  svg.setPointerCapture(event.pointerId);
+  updateInteractionFeedback();
 });
 
 svg.addEventListener("pointermove", (event) => {
+  if (activeDrag?.pointerId === event.pointerId) {
+    const modelPoint = modelPointFromPointer(event);
+    if (!modelPoint) return;
+    activeDrag.currentModelPoint = modelPoint;
+    if (!activeDrag.activated) {
+      if (!exceedsDragActivationThreshold(
+        activeDrag.startClientPoint,
+        { x: event.clientX, y: event.clientY },
+      )) return;
+      activeDrag.controller = CanonicalDragController.begin(
+        project,
+        activeDrag.entity,
+        activeDrag.startModelPoint,
+      );
+      activeDrag.activated = true;
+    }
+    const result = activeDrag.controller.preview(modelPoint);
+    previewProject = result.displayProject;
+    activeDrag.latestStatus = result.preview.status;
+    activeDrag.latestReason = result.preview.status === "valid" ? "" : result.preview.reason;
+    activeDrag.footprintChanged = result.preview.status === "valid" && result.preview.metadata.footprintChanged;
+    render();
+    return;
+  }
   const hit = hitTestPointer(event);
   const next = hit?.entity ?? null;
   if (sameEntity(selectionState.hovered, next)) return;
@@ -559,9 +709,21 @@ svg.addEventListener("pointermove", (event) => {
 });
 
 svg.addEventListener("pointerleave", () => {
+  if (activeDrag) return;
   if (!selectionState.hovered) return;
   selectionState = clearHoveredEntity(selectionState);
   renderSelectionVisuals();
+});
+
+svg.addEventListener("pointerup", (event) => {
+  if (activeDrag?.pointerId !== event.pointerId) return;
+  event.preventDefault();
+  finishActiveDrag();
+});
+
+svg.addEventListener("pointercancel", (event) => {
+  if (activeDrag?.pointerId !== event.pointerId) return;
+  cancelActiveDrag("pointerCancel");
 });
 
 svg.addEventListener("keydown", (event) => {
@@ -575,7 +737,7 @@ svg.addEventListener("keydown", (event) => {
 });
 
 function deleteSelection() {
-  if (selectionState.selected) showToast("Topology geometry is read-only in B1");
+  if (selectionState.selected) showToast("Deleting canonical geometry is not available in B2");
 }
 
 document.querySelectorAll("[data-tool]").forEach((button) => button.addEventListener("click", () => setTool(button.dataset.tool)));
@@ -703,6 +865,7 @@ document.querySelector("#export-svg").addEventListener("click", () => {
   copy.querySelectorAll(".hovered, .selected").forEach((target) => {
     target.classList.remove("hovered", "selected");
   });
+  copy.classList.remove("dragging-valid", "dragging-invalid", "footprint-affecting");
   copy.querySelector("#grid-layer")?.remove();
   copy.setAttribute("viewBox", `0 0 ${state.site.width} ${state.site.depth}`);
   copy.setAttribute("width", `${state.site.width / 25.4}in`);
@@ -721,6 +884,11 @@ function showToast(message) {
 
 window.addEventListener("keydown", (event) => {
   if (/INPUT|SELECT|TEXTAREA/.test(document.activeElement?.tagName)) return;
+  if (event.key === "Escape" && activeDrag) {
+    event.preventDefault();
+    cancelActiveDrag("escape");
+    return;
+  }
   if (event.key.toLowerCase() === "v") setTool("select");
   if (event.key === "Delete" || event.key === "Backspace") deleteSelection();
   if (event.ctrlKey && event.key.toLowerCase() === "z") { event.preventDefault(); undo(); }

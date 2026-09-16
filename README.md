@@ -30,7 +30,7 @@ Open `http://127.0.0.1:8765/`. Keep the entire `dist` folder together because th
 - Inspect wall classification, dimensions, thickness, semantic role/enclosure, and junction connectivity.
 - Toggle **Legacy comparison** only when comparing the old rectangle tracing against canonical geometry.
 - Zoom with the toolbar and scroll the drawing viewport independently when the plan is larger than the canvas.
-- General wall creation/deletion remains a scheduled topology-authoring stage; existing-wall direct manipulation is the next interaction milestone.
+- Drag a canonical wall perpendicular to its axis, or drag a canonical junction while the existing topology engine preserves orthogonality and connectivity. Each valid release is one undoable project change; Escape, pointer cancellation, invalid release, and semantic-remap-required results roll back exactly. Room/wall creation and deletion remain disabled.
 
 The browser currently saves a strictly validated ProjectV2 document locally. ProjectV2 remains the historical Option-3 document contract. Before general topology authoring is considered complete, the roadmap requires a generic next-major project schema with an explicit ProjectV2 migration so blank/non-Option-3 projects do not inherit Option-3-only identity/recovery assumptions.
 
@@ -94,6 +94,8 @@ A4-Core derives true exterior walls, physical exterior wall-face envelopes, and 
 B0 adds the immutable preview/commit/cancel interaction lifecycle. B1 adds runtime-only canonical space/wall/node selection with deterministic node → wall → space hit precedence.
 
 The future path is **B2 movement → A4-Coverage → B3 typed dimensions → generic ProjectV3/new-project foundation → topology authoring → snapping → inspector/semantic editing → polish → blank-project real-use QA**.
+
+B2 connects canonical wall and junction dragging to the B0 transaction lifecycle and A2.5 movement operations. Live candidates are rendered separately from the committed project, internal/exterior footprint metadata comes from A4-Core, and a successful gesture contributes exactly one undo/redo entry.
 
 ## Construction note
 

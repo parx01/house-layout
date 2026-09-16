@@ -254,7 +254,7 @@ kbd {
   stroke-width: 60;
   stroke-linejoin: round;
 }
-.topology-wall-group { cursor: pointer; }
+.topology-wall-group { cursor: grab; }
 .topology-wall-band {
   stroke: #172b3a;
   stroke-linecap: square;
@@ -288,13 +288,41 @@ kbd {
   pointer-events: none;
   transition: fill 120ms ease, stroke 120ms ease;
 }
-.topology-junction-group { cursor: pointer; }
+.topology-junction-group { cursor: grab; }
 .topology-junction-hit { fill: transparent; stroke: transparent; pointer-events: all; }
 .topology-junction-group.hovered .topology-junction { fill: #c9f1eb; stroke: #0e887e; }
 .topology-junction-group.selected .topology-junction {
   fill: var(--amber);
   stroke: #7b5710;
   filter: url(#selection-glow);
+}
+#plan-svg.dragging-valid,
+#plan-svg.dragging-valid .topology-wall-group,
+#plan-svg.dragging-valid .topology-junction-group { cursor: grabbing; }
+#plan-svg.dragging-valid .topology-wall-group.selected .topology-wall-band {
+  stroke: #18a999;
+}
+#plan-svg.dragging-valid .topology-junction-group.selected .topology-junction {
+  fill: #18a999;
+  stroke: #08675f;
+}
+#plan-svg.dragging-invalid,
+#plan-svg.dragging-invalid .topology-wall-group,
+#plan-svg.dragging-invalid .topology-junction-group { cursor: not-allowed; }
+#plan-svg.dragging-invalid .topology-wall-group.selected .topology-wall-band { stroke: #d94b52; }
+#plan-svg.dragging-invalid .topology-junction-group.selected .topology-junction {
+  fill: #ff8c91;
+  stroke: #8f2026;
+}
+#plan-svg.footprint-affecting .topology-wall-group.selected .topology-wall-band,
+#plan-svg.footprint-affecting .topology-junction-group.selected .topology-junction {
+  stroke: #8e5fd2;
+}
+.drag-invalid-marker {
+  fill: rgba(217, 75, 82, 0.22);
+  stroke: #b52d35;
+  stroke-width: 45;
+  pointer-events: none;
 }
 .legacy-room-comparison {
   fill: rgba(173, 69, 148, 0.035);
