@@ -1,280 +1,338 @@
-# Phase B — Polished Interaction & Understanding Plan
+# Phase B — General Floor-Plan Interaction & Authoring Plan
 
 ## Product target
 
-Phase B turns the trustworthy geometry built in A2–A4 into the actual product experience.
+Phase B turns the trustworthy geometry built in A2–A4 into a genuine **general-purpose orthogonal floor-plan editor**.
 
-The target is **Figma-like ease for house planning**, not CAD complexity: direct manipulation, clear architectural dimensions, minimal controls, strong visual feedback, and enough explanation that a non-CAD user can understand what each edit changes.
+The target is Figma/Rayon-like ease for house planning, not CAD/BIM complexity: direct manipulation, exact architectural dimensions, wall/partition authoring, explicit room semantics, minimal controls, strong feedback, and safe experimentation.
 
-Phase B is considered successful when the user can comfortably redesign the house for long sessions without needing to understand topology, wall graphs, micrometres, or internal geometry rules.
+Option-3 remains the main detailed regression fixture, but Phase B is not complete if users can only modify the walls that Option-3 already contains.
+
+See `docs/general-floor-plan-editor-architecture.md` for the hard architectural requirement.
+
+## Product boundary for this phase
+
+Supported initially:
+
+- desktop-first 2D editing
+- one floor
+- rectangular site boundary
+- horizontal/vertical walls only
+- exact wall thickness
+- arbitrary valid orthogonal room/space arrangements
+- new projects starting from empty topology.
+
+Still out of scope unless separately scheduled:
+
+- diagonal/curved walls
+- multi-floor workflows
+- structural engineering
+- BIM
+- MEP
+- 3D
+- collaboration
+- large furniture/object libraries.
 
 ## Principles
 
-1. **One obvious action at a time.** Selection determines the controls shown. Avoid permanent panels full of irrelevant fields.
-2. **Direct manipulation first.** Drag the thing that should move; type a value when exactness matters.
-3. **Architectural language only.** Use `10' 6"`, `Clear width`, `Wall thickness`, `Rear setback`, `Room area`, etc. Never expose topology jargon.
-4. **Immediate cause-and-effect feedback.** While moving a shared wall, show which spaces grow/shrink and which dimensions change.
-5. **Safe experimentation.** Invalid edits preview clearly and cannot corrupt the plan. Undo, Escape/cancel, and restore are dependable.
-6. **Low visual noise.** Dimensions, guides and warnings appear when useful and fade when not relevant.
-7. **Understanding is a feature.** The editor should explain a selected room/wall in plain language, not merely expose geometry.
-8. **Desktop-first.** Optimize for mouse/trackpad + keyboard and normal laptop/desktop screens. No mobile editing requirement in Phase B.
+1. **Walls are canonical; rooms are derived.** Never return to independent room rectangles.
+2. **One geometry transaction architecture.** Dragging, typed dimensions, wall drawing, deletion, thickness edits, and snapping must all produce canonical candidate topology and pass the same validation/reconciliation/commit boundary.
+3. **Human semantics after structural ambiguity.** Face splits/merges/new faces may require user resolution; never guess room identity from names or geometry.
+4. **Direct manipulation first.** Drag or draw the physical thing; type exact values when precision matters.
+5. **Architectural language only.** Do not expose graph/topology terminology in normal UX.
+6. **Safe experimentation.** Preview is transient; invalid candidates never corrupt the committed project; Escape/pointer-cancel is exact.
+7. **Derived facts stay derived.** Faces, clear geometry, exterior envelope, coverage, adjacency, and dimensions are recomputed from canonical source data.
+8. **Option-3 is a fixture, not an assumption.** Generic features need non-Option-3 tests.
 
-## Phase B scope
+## Interaction state model
 
-### B1 — Topology-native rendering and selection
+Every geometry-authoring action follows the same lifecycle:
 
-Replace the legacy rectangle representation in the working editor with the canonical topology/space model.
+`idle → hover → selected/tool-active → editing preview → valid / invalid / remapRequired → commit or cancel`
 
-Required behavior:
+Commit creates one logical undo entry. Preview never writes persistence/history.
 
-- Render canonical walls once, with wall thickness visually represented.
-- Render derived spaces beneath walls.
-- Clear hover and selected states for spaces, walls and junctions.
-- Selection precedence must be predictable when objects overlap.
-- Clicking empty canvas clears selection.
-- Reference image, property boundary, setbacks and grid remain independent layers.
-- Provide a `Fit plan` action and reliable pan/zoom.
-- Maintain good hit targets even for thin walls and high zoom.
+The conceptual pipeline is:
 
-The visual hierarchy should make the plan itself dominant. Property/setback/reference information must remain secondary.
+`user intent → topology operation → topology validation → derived faces → semantic reconciliation/resolution → exterior/coverage derivation → atomic project commit`
 
-### B2 — Shared-wall and junction editing
+## B0 — Interaction transaction contract
 
-Expose A2 geometry transactions through direct manipulation.
+Completed foundation.
 
-Required behavior:
+Required invariant remains:
 
-- Drag internal shared walls perpendicular to their axis.
-- Drag eligible junctions/corners while preserving connectivity and orthogonality.
-- Exterior wall movement is clearly distinguishable from internal-wall movement.
-- Movement previews must be transient; commit once on pointer-up.
-- Escape/pointer-cancel restores the exact pre-edit state.
-- Invalid/self-intersecting/inverting moves are visibly rejected before commit.
-- Prevent rooms from collapsing below the defined minimum clear dimension.
-- Undo/redo records one logical edit per gesture, not every pointer movement.
+- immutable begin snapshot
+- non-cumulative preview from that snapshot
+- one commit per gesture
+- exact cancel
+- invalid/remap-required states are explicit
+- future tools reuse the same transaction semantics.
 
-During a shared-wall drag, show live before/after effects on adjacent spaces, for example:
+## B1 — Canonical selection and hit testing
 
-`Kitchen 10' 0" → 10' 6"`  
-`Lobby 14' 2" → 13' 8"`
+Completed foundation.
 
-Internal-wall movement must not imply a coverage change. Exterior-wall movement may.
+Selection is based on persistent semantic spaces, canonical walls, and canonical nodes with deterministic hit precedence and screen-space tolerance.
 
-### B3 — Direct architectural dimensions
+## B2 — Existing-wall and junction manipulation
 
-Dimensions are a primary editing interface, not decoration.
+Expose movement of existing topology through direct manipulation.
 
 Required behavior:
 
-- Show useful clear dimensions for the current selection.
-- Click a dimension value to edit it directly.
-- Accept the existing architectural input grammar such as `10'`, `10'6"`, `9' 3"`, and decimal-foot compatibility.
-- Typed dimensions invoke the same validated geometry transaction as dragging.
-- Clearly distinguish **clear room dimension** from wall centre-line or exterior measurement when relevant.
-- Enter commits; Escape cancels.
-- Invalid values explain why they cannot be applied in plain language.
-- Avoid flooding every wall with dimensions simultaneously.
+- internal walls move perpendicular only
+- exterior walls use the same movement path
+- junctions preserve connectivity/orthogonality
+- live valid/invalid preview
+- footprint consequence from A4 geometry
+- exact cancel
+- one undo step per successful gesture.
 
-Default dimension visibility should be contextual: selected space/wall first, surrounding critical dimensions second.
+B2 intentionally does not yet add/delete walls.
 
-### B4 — Snapping, guides and precision controls
+## A4-Coverage integration
 
-Snapping should help without feeling magnetic or mysterious.
+After B2, replace legacy coverage authority with the canonical physical coverage engine.
 
-Priority should generally be:
+The coverage algorithm must be generic even though the current ProjectV2 fixture supplies 66/100:
+
+- gross area from physical exterior envelope
+- explicit open-to-sky clear-interior exclusions
+- exact rational policy comparison
+- no room-sum/common-area authority
+- live preview/commit/undo consistency.
+
+## B3 — Direct architectural dimensions
+
+Dimensions are both information and an editing surface.
+
+Required behavior:
+
+- contextual clear dimensions
+- typed feet/inches input
+- clear distinction between clear-space, centre-line, and exterior dimensions
+- typed change reaches the same canonical transaction used by drag
+- Enter commits; Escape cancels
+- invalid values explain the reason in architectural language.
+
+## G1 — Generic project/document foundation
+
+Before wall creation/deletion is treated as product authoring, migrate away from Option-3-only document assumptions.
+
+Introduce the next major project schema and explicit ProjectV2 migration.
+
+Required product capabilities:
+
+- New Project
+- arbitrary project identity/name
+- empty topology
+- no mandatory Option-3 recovery/reference assets
+- project-specific site metadata
+- generic coverage-policy provenance
+- generic storage/export naming
+- save/load blank and user-authored projects.
+
+Option-3 remains importable/recoverable as a historical fixture.
+
+## B4 — Topology Authoring
+
+This is mandatory for Phase B completion.
+
+### Wall tool
+
+Users can draw partitions/exterior walls with:
+
+- point-to-point or drag interaction
+- orthogonal constraint
+- chosen/default thickness
+- automatic endpoint reuse
+- T/X intersection detection and splitting
+- preview/cancel/one commit.
+
+### Delete wall
+
+Users can delete canonical segments/runs safely.
+
+Deletion must:
+
+- validate resulting graph
+- remove redundant isolated nodes only when unambiguous
+- preserve unrelated IDs where possible
+- surface room merge/disappearance through semantic reconciliation.
+
+### Thickness editing
+
+Changing wall thickness is a canonical geometry edit that updates clear-space geometry, physical envelope, site validity, and coverage as appropriate.
+
+### Structural semantic resolution
+
+A dedicated workflow resolves:
+
+- split spaces
+- merged spaces
+- orphaned previous spaces
+- newly unclaimed faces
+- ambiguous correspondence.
+
+The UI should ask explicit questions such as which child keeps the old room identity and what new space to create. It must not silently choose.
+
+### Space semantic editing
+
+For new/existing semantic spaces support at least:
+
+- name
+- category
+- architectural role
+- enclosure/open-to-sky classification.
+
+### Exterior authoring
+
+Users can create/remove/reconnect walls that alter the building perimeter. There is no separate footprint shape; A4 derives it from topology.
+
+### Blank-plan acceptance
+
+From a fresh generic project the user can draw a building enclosure, create rooms by adding partitions, merge rooms by deleting partitions, reshape the exterior, and save/reload the result.
+
+## B5 — Snapping, guides and precision controls
+
+Snapping applies to movement and wall-authoring tools.
+
+Priority generally:
 
 1. existing junction/end point
 2. wall extension/alignment
-3. meaningful architectural alignment
-4. grid/increment snap
+3. architectural alignment
+4. grid/increment.
 
 Required behavior:
 
-- Temporary alignment guides during drag.
-- Clear snap indicator showing what is being aligned to.
-- Screen-space snap threshold so behavior feels consistent at different zoom levels.
-- Hysteresis so a selected snap target does not flicker between candidates.
-- `Alt` temporarily disables snapping during a drag.
-- Arrow-key nudging for selected movable geometry.
-- Shift/modifier behavior may provide larger/finer nudges if useful, but keep shortcuts minimal.
+- screen-space threshold
+- visible target/guide
+- hysteresis
+- temporary disable modifier
+- keyboard nudging where useful
+- canonical validation always remains final authority.
 
-Never commit a snap candidate that produces invalid topology.
+## B6 — Inspector, semantic authoring, and understanding
 
-### B5 — Inspector, language and understanding mode
+The inspector answers:
 
-The inspector should answer **“what is this?”**, **“what can I change?”**, and **“what happens if I change it?”**.
+- what is this?
+- what can I change?
+- what will that change affect?
 
-#### Space selected
+### Space selected
 
-Show only useful information such as:
+Show/edit useful information such as:
 
-- name
-- clear dimensions
-- clear floor area
-- relevant adjacent spaces
-- exterior/shared wall relationships
-- current setback relationship when applicable
+- name/type/role/enclosure
+- clear dimensions/area
+- adjacency
+- exterior/shared wall relationships.
 
-Example explanation:
-
-> Kitchen — 10' × 9' 3", 92.5 sq ft. The right wall is shared with the Lobby. Moving it changes both spaces but does not change the building footprint.
-
-#### Wall selected
+### Wall selected
 
 Show:
 
-- wall type in plain language: internal/shared or exterior, derived from geometry
-- length
-- thickness
+- internal/shared/exterior classification
+- length/thickness
 - adjacent spaces
-- whether moving it affects building footprint/coverage
-- editable movement/dimension controls
+- footprint/coverage consequence
+- thickness/dimension controls where applicable.
 
-#### Junction selected
+### Node selected
 
-Show a compact description of connected walls and the effect of moving the junction.
+Show connected-wall context and movement consequences in plain language.
 
-#### Warnings
+### Semantic resolution
 
-Warnings should be concise and actionable, for example:
+`remapRequired` must have a human-facing resolution experience rather than validator output.
 
-- `Rear setback is 7' 6". Your design target is 8'.`
-- `This move would make the Kitchen only 2' 4" wide.`
-- `This wall cannot move farther because it would cross another wall.`
+## B7 — Editing shell and visual polish
 
-Do not expose validator or exception wording directly to the user.
+Recommended permanent shell:
 
-### B6 — Editing shell and visual polish
+- New/Open/Save
+- Undo/Redo
+- Fit/zoom
+- Select tool
+- Wall tool
+- Dimension/Measure tool
+- main canvas
+- contextual inspector
+- compact layer/display controls.
 
-Keep the permanent interface intentionally small.
+Requirements:
 
-Recommended shell:
+- clear empty-project state
+- quiet autosave state
+- good keyboard/focus behavior
+- no dependence on a reference image
+- Option-3 restore clearly labeled as fixture/recovery, not generic reset
+- exported SVG/JSON free of interaction overlays.
 
-- compact top bar: Undo, Redo, Fit, zoom state, save state
-- small primary tool group: Select, Wall, Measure/Dimension, Pan only if Pan needs an explicit tool
-- main plan canvas
-- contextual inspector on the right
-- optional layer/display popover instead of a large permanent panel
+## Performance target
 
-Display toggles should include only genuinely useful layers:
+Correctness is more important than exotic optimization, but previews should feel immediate.
 
-- room names
-- dimensions
-- setbacks
-- reference image
-- grid
-- guides/annotations as appropriate
+During preview:
 
-Other requirements:
-
-- strong typography hierarchy and readable text at normal laptop resolution
-- no tiny CAD-style icons without labels/tooltips
-- generous hit targets
-- keyboard shortcut shown in tooltip/menu where one exists
-- smooth pan/zoom and no unexpected page scrolling while manipulating the canvas
-- selection must remain visually obvious at all zoom levels
-- autosave state shown quietly: `Saving…`, `Saved`, or an actionable error
-- restore baseline Option-3 through an explicit protected action
-- optional wall/geometry lock only if it solves a real accidental-edit problem; do not add a complex permissions system
-
-## Interaction states
-
-Every geometry edit should follow the same interaction state model:
-
-`idle → hover → selected → editing preview → valid/invalid preview → commit or cancel`
-
-The UI must never render an invalid candidate as though it were committed.
-
-Use the geometry core as authority. The renderer/inspector may request changes but must not independently mutate room dimensions, wall coordinates or areas.
-
-## Performance and fluidity target
-
-The plan is small, so correctness and interaction quality matter more than exotic optimization.
-
-During drag:
-
-- update only preview-dependent rendering where practical
-- avoid persistence/history writes until commit
-- keep pointer response perceptually immediate
-- do not run expensive work unrelated to the current preview
+- avoid persistence/history writes
+- recompute only necessary derived state where practical
+- do not bypass validation for speed.
 
 After commit:
 
-- validate once through the canonical transaction path
-- recompute derived spaces/dimensions/warnings
-- create one history snapshot
-- autosave
+- canonical validation/reconciliation
+- derived-space/exterior/coverage recomputation
+- one history entry
+- autosave.
 
 ## Accessibility and comprehension
 
-Phase B should remain usable without memorizing shortcuts.
+Important actions must remain mouse-discoverable and keyboard-accessible.
 
-- all important actions available by mouse
-- visible focus state for keyboard interaction
-- Escape consistently means cancel/close
-- Enter consistently means apply where a field is being edited
-- text and controls meet reasonable contrast/size expectations
-- color is not the only indication of invalid/selected/warning states
-
-## Explicitly out of Phase B
-
-Do not expand Phase B into a full architectural suite.
-
-Deferred unless later requested:
-
-- door/window authoring
-- furniture library
-- electrical/plumbing/MEP
-- structural design
-- BIM concepts
-- 3D
-- multi-floor workflows
-- collaboration
-- large productivity toolsets such as multi-select distribution, variants, bulk duplication, advanced import, etc.
-
-Parking, doors/windows and richer architectural objects may be added later only when they become useful to the actual house-design workflow.
-
-## Suggested implementation sequence
-
-### B0 — Interaction design contract
-Freeze selection behavior, visual states, inspector language, shortcuts and edit-state semantics before broad UI implementation.
-
-### B1 — Read-only topology/space renderer
-Render the authoritative geometry and verify visual parity with the accepted Option-3 baseline.
-
-### B2 — Wall/junction manipulation
-Connect direct manipulation to canonical geometry transactions with preview/cancel/undo.
-
-### B3 — Direct dimensions
-Add contextual dimensions and type-to-resize through the same transaction path.
-
-### B4 — Snapping and precision
-Add ranked snapping, guides, override and keyboard nudging.
-
-### B5 — Understanding inspector
-Add plain-language space/wall explanations, live effects and warnings.
-
-### B6 — Polish and usability pass
-Refine layout, typography, interaction latency, tooltips, layer controls, autosave feedback and keyboard/mouse consistency.
-
-### B7 — Real-use QA
-Use the editor to perform representative house redesign work for an extended session and fix friction before considering Phase B complete.
+- visible focus
+- Escape consistently cancels/closes
+- Enter applies editable fields
+- selection/invalid state not expressed by color alone
+- reasonable text/control sizes
+- concise actionable errors.
 
 ## Acceptance scenarios
 
-Phase B is not complete until these feel natural:
+Phase B is not complete until both categories pass.
 
-1. Select the Kitchen and immediately understand its dimensions, area and adjacent walls.
-2. Drag a Kitchen/Lobby shared wall; both dimensions update live and the total footprint remains unchanged.
-3. Click a clear dimension, type a new feet/inches value, and get exactly the same result as a drag.
-4. Attempt an invalid move; the UI explains the problem and the committed plan remains untouched.
-5. Move an exterior wall and clearly see the footprint/coverage implication.
-6. Align a wall with another wall using an obvious temporary guide; temporarily disable snapping when desired.
-7. Make several edits, Undo/Redo them reliably, cancel a drag with Escape, and never lose geometry integrity.
-8. Hide the reference/grid/dimensions and still understand the floor plan immediately.
-9. Work comfortably at normal laptop resolution without side panels overwhelming the drawing area.
-10. A user unfamiliar with CAD can discover the primary editing workflow without documentation.
+### Option-3 regression
+
+1. Select spaces/walls/nodes reliably.
+2. Drag shared walls and preserve footprint.
+3. Drag exterior walls and update coverage.
+4. Type exact dimensions through the same transaction path.
+5. Cancel invalid edits safely.
+6. Use snapping/guides.
+7. Undo/redo and save/reload extensively.
+
+### General-editor acceptance
+
+Without calling Option-3 project/topology factories:
+
+1. Create a new rectangular site/project.
+2. Start from empty topology.
+3. Draw an exterior rectangle.
+4. Create/assign the first semantic space.
+5. Add several partitions and resolve new spaces.
+6. Move internal partitions.
+7. Type exact dimensions.
+8. Delete a partition and explicitly resolve the merge.
+9. Reshape the exterior.
+10. Change wall thickness.
+11. Create a bounded open-to-sky courtyard and classify it explicitly.
+12. Verify physical coverage.
+13. Undo/redo structural edits.
+14. Save, reload, export, and continue editing.
 
 ## Phase B exit criterion
 
-Phase B is complete when the canonical Plan 66 model is not merely editable but **pleasant to use as the user's main house-planning workspace**: precise when needed, forgiving while exploring, visually quiet, understandable in plain language, and difficult to corrupt accidentally.
+Phase B is complete only when Plan 66 is pleasant to use **and** genuinely authorable: a user can create an arbitrary orthogonal floor plan from scratch, alter its topology and semantics safely, and persist it without dependence on Option-3 IDs, rooms, dimensions, reference assets, or legacy rectangles.
