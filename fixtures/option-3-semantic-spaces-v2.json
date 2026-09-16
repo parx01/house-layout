@@ -1,0 +1,19 @@
+{
+  "status": "active",
+  "modelVersion": 2,
+  "spaces": [
+    { "id": "s-bedroom-1", "name": "Bedroom 1", "category": "room", "architecturalRole": "ordinaryRoom", "enclosure": "enclosedCovered", "faceId": "f-dde2d722d470e5e8" },
+    { "id": "s-toilet-1", "name": "Toilet 1", "category": "service", "architecturalRole": "service", "enclosure": "enclosedCovered", "faceId": "f-4500a68c39844fc4" },
+    { "id": "s-dress-1", "name": "Dress 1", "category": "storage", "architecturalRole": "storage", "enclosure": "enclosedCovered", "faceId": "f-25299ab9d0600da6" },
+    { "id": "s-toilet-2", "name": "Toilet 2", "category": "service", "architecturalRole": "service", "enclosure": "enclosedCovered", "faceId": "f-41bc3b811ac8bc6a" },
+    { "id": "s-dress-2", "name": "Dress 2", "category": "storage", "architecturalRole": "storage", "enclosure": "enclosedCovered", "faceId": "f-07944bbfa1fe0b50" },
+    { "id": "s-bedroom-2", "name": "Bedroom 2", "category": "room", "architecturalRole": "ordinaryRoom", "enclosure": "enclosedCovered", "faceId": "f-46f1f10484862bb1" },
+    { "id": "s-lobby-dining-puja", "name": "Lobby / Dining with Puja Alcove", "category": "other", "architecturalRole": "circulation", "enclosure": "enclosedCovered", "faceId": "f-c26ea4cfc8e5967d" },
+    { "id": "s-kitchen", "name": "Kitchen", "category": "service", "architecturalRole": "service", "enclosure": "enclosedCovered", "faceId": "f-995c81a969eb9c62" },
+    { "id": "s-staircase", "name": "Staircase", "category": "circulation", "architecturalRole": "staircase", "enclosure": "enclosedCovered", "faceId": "f-5bd20450438f7e84" },
+    { "id": "s-living-room", "name": "Living Room", "category": "room", "architecturalRole": "ordinaryRoom", "enclosure": "enclosedCovered", "faceId": "f-b90cdc1e2457fadd" },
+    { "id": "s-wash-area", "name": "Wash Area", "category": "service", "architecturalRole": "service", "enclosure": "enclosedCovered", "faceId": "f-c4be109283d52551" },
+    { "id": "s-toilet-3", "name": "Toilet 3", "category": "service", "architecturalRole": "service", "enclosure": "enclosedCovered", "faceId": "f-ce4b77ad898b046f" },
+    { "id": "s-guest-bedroom", "name": "Guest Bedroom", "category": "room", "architecturalRole": "ordinaryRoom", "enclosure": "enclosedCovered", "faceId": "f-9b08821b6b5e1967" }
+  ]
+}

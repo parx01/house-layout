@@ -1,6 +1,9 @@
 import { areaUm2, lengthUm, umToLegacyMm } from "../core/units.js";
 import type { SiteV2 } from "../core/site.js";
-import { validateSemanticSpacesV1 } from "../spaces/semantic-model.js";
+import {
+  migrateSemanticSpacesV1ToV2,
+  validateSemanticSpacesV2,
+} from "../spaces/semantic-model.js";
 import type { TopologyV2 } from "../topology/model.js";
 import { validateTopologyV2 } from "../topology/validation.js";
 import { isOption3BaselineLegacyGeometry } from "./option3-baseline.js";
@@ -168,7 +171,7 @@ export function validateProjectV2(value: unknown): ProjectV2 {
     "project",
   );
   literal(root.schemaVersion, 2, "project.schemaVersion");
-  literal(root.schemaRevision, 5, "project.schemaRevision");
+  literal(root.schemaRevision, 6, "project.schemaRevision");
   literal(root.projectId, "option-3", "project.projectId");
   const name = stringValue(root.name, "project.name");
   literal(root.units, "um", "project.units");
@@ -206,7 +209,7 @@ export function validateProjectV2(value: unknown): ProjectV2 {
 
   return {
     schemaVersion: 2,
-    schemaRevision: 5,
+    schemaRevision: 6,
     projectId: "option-3",
     name,
     units: "um",
@@ -283,7 +286,7 @@ function validateProjectSpaces(
   if (topology.status !== "active") {
     fail("project.spaces cannot be active while project.topology is deferred.");
   }
-  return validateSemanticSpacesV1(value, topology, "project.spaces");
+  return validateSemanticSpacesV2(value, topology, "project.spaces");
 }
 
 function validateSiteV2(value: unknown): SiteV2 {
@@ -390,17 +393,18 @@ function validateRoadWidthProvenance(value: unknown): SiteV2["road"]["widthProve
 export function normalizeProjectV2(value: unknown): ProjectV2 {
   const root = record(value, "project");
   literal(root.schemaVersion, 2, "project.schemaVersion");
-  if (root.schemaRevision === 5) return validateProjectV2(value);
-  if (root.schemaRevision === 4) return migrateProjectV2Revision4To5(root);
-  if (root.schemaRevision === 3) return migrateProjectV2Revision3To5(root);
-  if (root.schemaRevision === 2) return migrateProjectV2Revision2To5(root);
+  if (root.schemaRevision === 6) return validateProjectV2(value);
+  if (root.schemaRevision === 5) return migrateProjectV2Revision5To6(root);
+  if (root.schemaRevision === 4) return migrateProjectV2Revision4To6(root);
+  if (root.schemaRevision === 3) return migrateProjectV2Revision3To6(root);
+  if (root.schemaRevision === 2) return migrateProjectV2Revision2To6(root);
   if (root.schemaRevision !== undefined) {
     fail(`project.schemaRevision ${String(root.schemaRevision)} is not supported for schemaVersion 2.`);
   }
-  return migrateProjectV2A1ToRevision5(root);
+  return migrateProjectV2A1ToRevision6(root);
 }
 
-export function migrateProjectV2A1ToRevision5(value: unknown): ProjectV2 {
+export function migrateProjectV2A1ToRevision6(value: unknown): ProjectV2 {
   const root = record(value, "project");
   exactKeys(
     root,
@@ -433,7 +437,7 @@ export function migrateProjectV2A1ToRevision5(value: unknown): ProjectV2 {
           }
         : { kind: "legacyProjectUnverified", sourceDocument: null, sourceLabel: null };
 
-  migrated.schemaRevision = 5;
+  migrated.schemaRevision = 6;
   const migratedBuilding = record(migrated.building, "project.building");
   migratedBuilding.status = "topologyDeferred";
   migrated.topology = deferredModel("A2");
@@ -444,7 +448,7 @@ export function migrateProjectV2A1ToRevision5(value: unknown): ProjectV2 {
   return validateProjectV2(migrated);
 }
 
-export function migrateProjectV2Revision2To5(value: unknown): ProjectV2 {
+export function migrateProjectV2Revision2To6(value: unknown): ProjectV2 {
   const root = record(value, "project");
   literal(root.schemaVersion, 2, "project.schemaVersion");
   literal(root.schemaRevision, 2, "project.schemaRevision");
@@ -456,7 +460,7 @@ export function migrateProjectV2Revision2To5(value: unknown): ProjectV2 {
   validateDeferredModel(root.spaces, "project.spaces", "A2");
 
   const migrated = structuredClone(root);
-  migrated.schemaRevision = 5;
+  migrated.schemaRevision = 6;
   const migratedBuilding = record(migrated.building, "project.building");
   migratedBuilding.status = topology.status === "active" ? "topologyActive" : "topologyDeferred";
   const migratedLegacy = validateLegacyEditorStateV1(migrated.legacyEditorState, "project.legacyEditorState");
@@ -474,7 +478,7 @@ export function migrateProjectV2Revision2To5(value: unknown): ProjectV2 {
  * Revision 3 required the spaces slot to be deferred. Validate that historical
  * meaning before permitting semantic spaces in later revisions.
  */
-export function migrateProjectV2Revision3To5(value: unknown): ProjectV2 {
+export function migrateProjectV2Revision3To6(value: unknown): ProjectV2 {
   const root = record(value, "project");
   exactKeys(
     root,
@@ -502,34 +506,66 @@ export function migrateProjectV2Revision3To5(value: unknown): ProjectV2 {
   literal(root.schemaRevision, 3, "project.schemaRevision");
   validateDeferredModel(root.spaces, "project.spaces", "A2");
   const migrated = structuredClone(root);
-  migrated.schemaRevision = 5;
+  migrated.schemaRevision = 6;
   return validateProjectV2(migrated);
 }
 
-/** Revision 4 introduced active semantic spaces while retaining the legacy authority restriction. */
-export function migrateProjectV2Revision4To5(value: unknown): ProjectV2 {
+/** Revision 4 introduced active V1 semantic spaces while retaining the legacy authority restriction. */
+export function migrateProjectV2Revision4To6(value: unknown): ProjectV2 {
   const root = record(value, "project");
   literal(root.schemaVersion, 2, "project.schemaVersion");
   literal(root.schemaRevision, 4, "project.schemaRevision");
+  return migrateLegacySemanticProject(root);
+}
+
+/** Revision 5 made topology authoritative but still stored semantic-space model V1. */
+export function migrateProjectV2Revision5To6(value: unknown): ProjectV2 {
+  const root = record(value, "project");
+  literal(root.schemaVersion, 2, "project.schemaVersion");
+  literal(root.schemaRevision, 5, "project.schemaRevision");
+  return migrateLegacySemanticProject(root);
+}
+
+function migrateLegacySemanticProject(root: Record<string, unknown>): ProjectV2 {
+  const topology = validateProjectTopology(root.topology);
   const migrated = structuredClone(root);
-  migrated.schemaRevision = 5;
+  const spaces = record(root.spaces, "project.spaces");
+  if (spaces.status === "active") {
+    if (topology.status !== "active") fail("project.spaces cannot be active while project.topology is deferred.");
+    migrated.spaces = migrateSemanticSpacesV1ToV2(root.spaces, topology, "project.spaces");
+  } else {
+    validateDeferredModel(root.spaces, "project.spaces", "A2");
+  }
+  migrated.schemaRevision = 6;
   return validateProjectV2(migrated);
 }
 
-/** @deprecated Use migrateProjectV2A1ToRevision5. Retained as a source-compatible normalizer. */
-export const migrateProjectV2A1ToRevision3 = migrateProjectV2A1ToRevision5;
+/** @deprecated Use migrateProjectV2A1ToRevision6. Retained as a source-compatible normalizer. */
+export const migrateProjectV2A1ToRevision5 = migrateProjectV2A1ToRevision6;
 
-/** @deprecated Use migrateProjectV2A1ToRevision5. Retained as a source-compatible normalizer. */
-export const migrateProjectV2A1ToRevision4 = migrateProjectV2A1ToRevision5;
+/** @deprecated Use migrateProjectV2A1ToRevision6. Retained as a source-compatible normalizer. */
+export const migrateProjectV2A1ToRevision3 = migrateProjectV2A1ToRevision6;
 
-/** @deprecated Use migrateProjectV2Revision2To5. Retained as a source-compatible normalizer. */
-export const migrateProjectV2Revision2To3 = migrateProjectV2Revision2To5;
+/** @deprecated Use migrateProjectV2A1ToRevision6. Retained as a source-compatible normalizer. */
+export const migrateProjectV2A1ToRevision4 = migrateProjectV2A1ToRevision6;
 
-/** @deprecated Use migrateProjectV2Revision2To5. Retained as a source-compatible normalizer. */
-export const migrateProjectV2Revision2To4 = migrateProjectV2Revision2To5;
+/** @deprecated Use migrateProjectV2Revision2To6. Retained as a source-compatible normalizer. */
+export const migrateProjectV2Revision2To5 = migrateProjectV2Revision2To6;
 
-/** @deprecated Use migrateProjectV2Revision3To5. Retained as a source-compatible normalizer. */
-export const migrateProjectV2Revision3To4 = migrateProjectV2Revision3To5;
+/** @deprecated Use migrateProjectV2Revision2To6. Retained as a source-compatible normalizer. */
+export const migrateProjectV2Revision2To3 = migrateProjectV2Revision2To6;
+
+/** @deprecated Use migrateProjectV2Revision2To6. Retained as a source-compatible normalizer. */
+export const migrateProjectV2Revision2To4 = migrateProjectV2Revision2To6;
+
+/** @deprecated Use migrateProjectV2Revision3To6. Retained as a source-compatible normalizer. */
+export const migrateProjectV2Revision3To5 = migrateProjectV2Revision3To6;
+
+/** @deprecated Use migrateProjectV2Revision3To6. Retained as a source-compatible normalizer. */
+export const migrateProjectV2Revision3To4 = migrateProjectV2Revision3To6;
+
+/** @deprecated Use migrateProjectV2Revision4To6. Retained as a source-compatible normalizer. */
+export const migrateProjectV2Revision4To5 = migrateProjectV2Revision4To6;
 
 function deferredModel(targetStage: "A2" | "postA2"): DeferredModelSlotV2 {
   return { status: "deferred", targetStage, modelVersion: null, data: null };

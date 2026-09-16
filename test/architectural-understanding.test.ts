@@ -4,7 +4,7 @@ import { serializeProject } from "../src/persistence/project-storage.js";
 import { createOption3ProjectV2 } from "../src/project/option3-baseline.js";
 import { deriveArchitecturalUnderstanding } from "../src/spaces/architectural-understanding.js";
 import { extractBoundedFaces } from "../src/spaces/extract-faces.js";
-import { spaceId, type SemanticSpacesV1 } from "../src/spaces/semantic-model.js";
+import { spaceId, type SemanticSpacesV2 } from "../src/spaces/semantic-model.js";
 import {
   WALL_THICKNESS_9_IN_UM,
   nodeId,
@@ -18,17 +18,19 @@ import {
 import { validateTopologyV2 } from "../src/topology/validation.js";
 import { rectangleTopology, twoRoomSharedWallTopology } from "./fixtures/topology.js";
 
-function spacesFor(topology: TopologyV2, ids?: readonly string[]): SemanticSpacesV1 {
+function spacesFor(topology: TopologyV2, ids?: readonly string[]): SemanticSpacesV2 {
   const faces = [...extractBoundedFaces(topology).faces].sort(
     (left, right) => Math.min(...left.vertices.map((point) => point.xUm)) - Math.min(...right.vertices.map((point) => point.xUm)),
   );
   return {
     status: "active",
-    modelVersion: 1,
+    modelVersion: 2,
     spaces: faces.map((face, index) => ({
       id: spaceId(ids?.[index] ?? `s-test-${index + 1}`),
       name: ids?.[index] ?? `Test ${index + 1}`,
       category: "other",
+      architecturalRole: "unclassified",
+      enclosure: "unclassified",
       faceId: face.id,
     })),
   };
@@ -112,7 +114,7 @@ describe("A3.4 architectural understanding", () => {
   it("treats a wall to an unclaimed face as having no adjacent semantic space", () => {
     const topology = twoRoomSharedWallTopology();
     const allSpaces = spacesFor(topology, ["s-west", "s-east"]);
-    const westOnly = { ...allSpaces, spaces: [allSpaces.spaces[0]!] } satisfies SemanticSpacesV1;
+    const westOnly = { ...allSpaces, spaces: [allSpaces.spaces[0]!] } satisfies SemanticSpacesV2;
     const result = deriveArchitecturalUnderstanding(topology, westOnly);
     expect(result.spaces[0]!.adjacentSpaces).toEqual([]);
     expect(result.spaces[0]!.boundaryWallIds).toContain("w-shared");

@@ -10,3 +10,8 @@ It is generated together with the mapping report by
 `npm run diagnostic:semantic-spaces` and is also dev-only. A second generated
 copy under `dist/diagnostics/` makes the same diagnostic available from the
 normal local `dist/` preview server.
+
+`../docs/option-3-special-space-classification.md` records every A3.5 base
+category, explicit architectural role, and enclosure classification. It also
+documents that the fixed Option-3 reference contains no bounded open-to-sky
+courtyard/void; this report does not perform A4 coverage calculation.

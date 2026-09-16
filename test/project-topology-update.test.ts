@@ -28,8 +28,15 @@ function projectWithBoundSpace() {
   const face = extractBoundedFaces(project.topology).faces[0]!;
   project.spaces = {
     status: "active",
-    modelVersion: 1,
-    spaces: [{ id: spaceId("s-authority-test"), name: "Authority transition fixture", category: "other", faceId: face.id }],
+    modelVersion: 2,
+    spaces: [{
+      id: spaceId("s-authority-test"),
+      name: "Authority transition fixture",
+      category: "other",
+      architecturalRole: "unclassified",
+      enclosure: "unclassified",
+      faceId: face.id,
+    }],
   };
   return validateProjectV2(project);
 }

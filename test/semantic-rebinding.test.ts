@@ -8,21 +8,23 @@ import {
 } from "../src/project/topology-update.js";
 import { extractBoundedFaces } from "../src/spaces/extract-faces.js";
 import { reconcileSemanticSpaces } from "../src/spaces/semantic-rebinding.js";
-import { spaceId, type SemanticSpacesV1 } from "../src/spaces/semantic-model.js";
+import { spaceId, type SemanticSpacesV2 } from "../src/spaces/semantic-model.js";
 import { moveWallPerpendicular } from "../src/topology/movement.js";
 import { getWallEndNode, getWallStartNode, wallId, type TopologyV2 } from "../src/topology/model.js";
 import { insertWall, splitWallAtPoint } from "../src/topology/operations.js";
 import { validateTopologyV2 } from "../src/topology/validation.js";
 import { rectangleTopology, twoRoomSharedWallTopology } from "./fixtures/topology.js";
 
-function spacesFor(topology: TopologyV2): SemanticSpacesV1 {
+function spacesFor(topology: TopologyV2): SemanticSpacesV2 {
   return {
     status: "active",
-    modelVersion: 1,
+    modelVersion: 2,
     spaces: extractBoundedFaces(topology).faces.map((face, index) => ({
       id: spaceId(`s-test-${index + 1}`),
       name: `Test ${index + 1}`,
       category: "other",
+      architecturalRole: "unclassified",
+      enclosure: "unclassified",
       faceId: face.id,
     })),
   };
@@ -182,6 +184,13 @@ describe("A3.3 curated Option-3 project integration", () => {
     if (result.status !== "committed" || result.project.spaces.status !== "active") throw new Error("Committed spaces required.");
     expect(result.reconciliation.reboundBindings).toHaveLength(1);
     expect(result.project.spaces.spaces.map((space) => space.id)).toEqual(before.spaces.spaces.map((space) => space.id));
+    for (const space of result.project.spaces.spaces) {
+      const previous = before.spaces.spaces.find((candidate) => candidate.id === space.id)!;
+      expect({ role: space.architecturalRole, enclosure: space.enclosure }).toEqual({
+        role: previous.architecturalRole,
+        enclosure: previous.enclosure,
+      });
+    }
     expect(parseProjectJson(serializeProject(result.project))).toEqual(result.project);
     expect(before).toEqual(createOption3ProjectV2());
   });

@@ -92,6 +92,24 @@ export function createOption3SemanticMappingMarkdown() {
         "",
     ].join("\n");
 }
+/** A3.5 audit report. Classification is curated from the fixed reference, never inferred from category. */
+export function createOption3SpecialSpaceClassificationMarkdown() {
+    const rows = createOption3SemanticSpaceMappingRows();
+    return [
+        "# Option-3 A3.5 special-space classification",
+        "",
+        "These classifications are explicit semantic metadata for later architectural understanding. They do not calculate or decide A4 building coverage.",
+        "",
+        "The fixed Option-3 reference contains no bounded courtyard or open-to-sky void. The Lobby / Dining face and its open-sided Puja alcove are shown within the covered building plan, so no open-to-sky role is invented.",
+        "",
+        "| SpaceId | Name | Base category | Architectural role | Enclosure |",
+        "|---|---|---|---|---|",
+        ...rows.map((row) => `| \`${row.id}\` | ${escapeMarkdownCell(row.name)} | \`${row.category}\` | \`${row.architecturalRole}\` | \`${row.enclosure}\` |`),
+        "",
+        `Classification total: **${rows.length} spaces; ${rows.filter((row) => row.enclosure === "openToSky").length} open-to-sky in Option-3.**`,
+        "",
+    ].join("\n");
+}
 function escapeXml(value) {
     return value.replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;");
 }

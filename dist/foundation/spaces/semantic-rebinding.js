@@ -1,5 +1,5 @@
 import { extractBoundedFaces } from "./extract-faces.js";
-import { validateSemanticSpacesV1, } from "./semantic-model.js";
+import { validateSemanticSpacesV2, } from "./semantic-model.js";
 /**
  * Reconciles persistent semantic identities with a newly derived face set.
  *
@@ -10,7 +10,7 @@ import { validateSemanticSpacesV1, } from "./semantic-model.js";
  * human remapping workflow.
  */
 export function reconcileSemanticSpaces(spacesValue, previousTopology, candidateTopology) {
-    const spaces = validateSemanticSpacesV1(spacesValue, previousTopology, "spaces");
+    const spaces = validateSemanticSpacesV2(spacesValue, previousTopology, "spaces");
     const previousFaces = extractBoundedFaces(previousTopology).faces;
     const candidateFaces = extractBoundedFaces(candidateTopology).faces;
     const previousById = new Map(previousFaces.map((face) => [face.id, face]));
@@ -75,7 +75,7 @@ export function reconcileSemanticSpaces(spacesValue, previousTopology, candidate
     }
     const reboundSpaces = {
         status: "active",
-        modelVersion: 1,
+        modelVersion: 2,
         spaces: spaces.spaces.map((space) => ({
             ...space,
             faceId: reboundBySpaceId.get(space.id) ?? space.faceId,
@@ -83,7 +83,7 @@ export function reconcileSemanticSpaces(spacesValue, previousTopology, candidate
     };
     return {
         status: "resolved",
-        spaces: validateSemanticSpacesV1(reboundSpaces, candidateTopology, "spaces"),
+        spaces: validateSemanticSpacesV2(reboundSpaces, candidateTopology, "spaces"),
         report: { status: "resolved", ...reportBase },
     };
 }

@@ -1,1 +1,1 @@
-{"version":3,"file":"option3-semantic-artifacts.d.ts","sourceRoot":"","sources":["../../../src/dev/option3-semantic-artifacts.ts"],"names":[],"mappings":"AAgBA,8EAA8E;AAC9E,wBAAgB,+BAA+B,CAAC,aAAa,SAA4B,GAAG,MAAM,CAkEjG;AAED,wBAAgB,oCAAoC,IAAI,MAAM,CAoB7D"}
+{"version":3,"file":"option3-semantic-artifacts.d.ts","sourceRoot":"","sources":["../../../src/dev/option3-semantic-artifacts.ts"],"names":[],"mappings":"AAgBA,8EAA8E;AAC9E,wBAAgB,+BAA+B,CAAC,aAAa,SAA4B,GAAG,MAAM,CAkEjG;AAED,wBAAgB,oCAAoC,IAAI,MAAM,CAoB7D;AAED,2GAA2G;AAC3G,wBAAgB,+CAA+C,IAAI,MAAM,CAkBxE"}

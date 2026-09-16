@@ -1,6 +1,6 @@
 import type { LengthUm } from "../core/units.js";
 import type { SiteV2 } from "../core/site.js";
-import type { SemanticSpacesV1 } from "../spaces/semantic-model.js";
+import type { SemanticSpacesV2 } from "../spaces/semantic-model.js";
 import type { TopologyV2 } from "../topology/model.js";
 export interface LegacyRoomV1 {
     id: string;
@@ -56,7 +56,7 @@ export interface DeferredModelSlotV2 {
 }
 export interface ProjectV2 {
     readonly schemaVersion: 2;
-    readonly schemaRevision: 5;
+    readonly schemaRevision: 6;
     readonly projectId: "option-3";
     readonly name: string;
     readonly units: "um";
@@ -67,7 +67,7 @@ export interface ProjectV2 {
         readonly coverageStatus: "deferredToExteriorEnvelopeA4";
     };
     readonly topology: DeferredModelSlotV2 | TopologyV2;
-    readonly spaces: DeferredModelSlotV2 | SemanticSpacesV1;
+    readonly spaces: DeferredModelSlotV2 | SemanticSpacesV2;
     readonly openings: DeferredModelSlotV2;
     readonly dimensions: DeferredModelSlotV2;
     readonly siteObjects: DeferredModelSlotV2;

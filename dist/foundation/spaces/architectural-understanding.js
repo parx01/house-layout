@@ -1,14 +1,14 @@
 import { getWallEndNode, getWallLength, getWallStartNode, } from "../topology/model.js";
 import { validateTopologyV2 } from "../topology/validation.js";
 import { extractBoundedFaces } from "./extract-faces.js";
-import { validateSemanticSpacesV1, } from "./semantic-model.js";
+import { validateSemanticSpacesV2, } from "./semantic-model.js";
 /**
  * Pure runtime derivation from canonical topology, A2.4 faces, and A3 spaces.
  * No result from this function is persisted as architectural source geometry.
  */
 export function deriveArchitecturalUnderstanding(topologyValue, spacesValue) {
     const topology = validateTopologyV2(topologyValue, "architecturalUnderstanding.topology");
-    const spaces = validateSemanticSpacesV1(spacesValue, topology, "architecturalUnderstanding.spaces");
+    const spaces = validateSemanticSpacesV2(spacesValue, topology, "architecturalUnderstanding.spaces");
     const faces = extractBoundedFaces(topology).faces;
     const facesById = new Map(faces.map((face) => [face.id, face]));
     const spacesByFaceId = new Map(spaces.spaces.map((space) => [space.faceId, space]));
@@ -46,6 +46,8 @@ export function deriveArchitecturalUnderstanding(topologyValue, spacesValue) {
             spaceId: space.id,
             name: space.name,
             category: space.category,
+            architecturalRole: space.architecturalRole,
+            enclosure: space.enclosure,
             faceId: space.faceId,
             face,
             centreLineAreaUm2: face.areaUm2,
@@ -76,7 +78,7 @@ export function deriveArchitecturalUnderstanding(topologyValue, spacesValue) {
     return {
         modelVersion: 1,
         topologyModelVersion: 1,
-        semanticModelVersion: 1,
+        semanticModelVersion: 2,
         spaces: understoodSpaces,
         sharedWalls,
         unclaimedFaceIds: faces.map((face) => face.id).filter((identity) => !claimedFaceIds.has(identity)).sort(),

@@ -23,7 +23,7 @@ function deferredTopology() {
 describe("A2.6.1 authority transition and retained topology integrity", () => {
   it("aligns the active baseline topology and building status", () => {
     const project = validateProjectV2(createOption3ProjectV2());
-    expect(project.schemaRevision).toBe(5);
+    expect(project.schemaRevision).toBe(6);
     expect(project.topology).toEqual(createOption3TopologyV2());
     expect(project.topology.status).toBe("active");
     expect(project.building.status).toBe("topologyActive");
@@ -143,7 +143,7 @@ describe("A2.6.1 authority transition and retained topology integrity", () => {
     activeRevision2.legacyEditorState.site.width = OPTION_3_V1_RECOVERY_STATE.site.width;
     activeRevision2.legacyEditorState.site.depth = OPTION_3_V1_RECOVERY_STATE.site.depth;
     const active = parseProjectJson(JSON.stringify(activeRevision2));
-    expect(active.schemaRevision).toBe(5);
+    expect(active.schemaRevision).toBe(6);
     expect(active.topology.status).toBe("active");
     expect(active.building.status).toBe("topologyActive");
     expect(active.legacyEditorState.site).toEqual({ width: 14_986, depth: 24_130, coverageLimit: 0.66 });
@@ -151,7 +151,7 @@ describe("A2.6.1 authority transition and retained topology integrity", () => {
     const deferredRevision2 = structuredClone(activeRevision2);
     deferredRevision2.topology = deferredTopology();
     const deferred = parseProjectJson(JSON.stringify(deferredRevision2));
-    expect(deferred.schemaRevision).toBe(5);
+    expect(deferred.schemaRevision).toBe(6);
     expect(deferred.topology.status).toBe("deferred");
     expect(deferred.building.status).toBe("topologyDeferred");
   });

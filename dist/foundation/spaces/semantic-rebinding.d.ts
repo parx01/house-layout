@@ -1,7 +1,7 @@
 import type { AreaUm2 } from "../core/units.js";
 import type { TopologyV2, WallId } from "../topology/model.js";
 import type { FaceId } from "./model.js";
-import { type SemanticSpacesV1, type SpaceId } from "./semantic-model.js";
+import { type SemanticSpacesV2, type SpaceId } from "./semantic-model.js";
 export type SemanticRebindingFailureReason = "orphanedFace" | "faceSplit" | "faceMerge" | "ambiguousCorrespondence";
 export interface FaceCorrespondenceEvidence {
     readonly overlapAreaUm2: AreaUm2;
@@ -39,7 +39,7 @@ export interface SemanticReconciliationReport {
 }
 export type SemanticReconciliationResult = {
     readonly status: "resolved";
-    readonly spaces: SemanticSpacesV1;
+    readonly spaces: SemanticSpacesV2;
     readonly report: SemanticReconciliationReport & {
         readonly status: "resolved";
     };
@@ -58,5 +58,5 @@ export type SemanticReconciliationResult = {
  * merges, deletions, and weak/ambiguous matches remain explicit for a later
  * human remapping workflow.
  */
-export declare function reconcileSemanticSpaces(spacesValue: SemanticSpacesV1, previousTopology: TopologyV2, candidateTopology: TopologyV2): SemanticReconciliationResult;
+export declare function reconcileSemanticSpaces(spacesValue: SemanticSpacesV2, previousTopology: TopologyV2, candidateTopology: TopologyV2): SemanticReconciliationResult;
 //# sourceMappingURL=semantic-rebinding.d.ts.map

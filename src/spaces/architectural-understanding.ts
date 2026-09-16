@@ -10,9 +10,11 @@ import { validateTopologyV2 } from "../topology/validation.js";
 import { extractBoundedFaces } from "./extract-faces.js";
 import type { DerivedBoundedFace, FaceId } from "./model.js";
 import {
-  validateSemanticSpacesV1,
-  type SemanticSpacesV1,
+  validateSemanticSpacesV2,
+  type ArchitecturalSpaceRole,
+  type SemanticSpacesV2,
   type SpaceCategory,
+  type SpaceEnclosure,
   type SpaceId,
 } from "./semantic-model.js";
 
@@ -75,6 +77,8 @@ export interface SemanticSpaceUnderstanding {
   readonly spaceId: SpaceId;
   readonly name: string;
   readonly category: SpaceCategory;
+  readonly architecturalRole: ArchitecturalSpaceRole;
+  readonly enclosure: SpaceEnclosure;
   readonly faceId: FaceId;
   /** Exact centre-line face from A2.4. This is not clear usable floor geometry. */
   readonly face: DerivedBoundedFace;
@@ -92,7 +96,7 @@ export interface SemanticSpaceUnderstanding {
 export interface ArchitecturalUnderstandingV1 {
   readonly modelVersion: 1;
   readonly topologyModelVersion: 1;
-  readonly semanticModelVersion: 1;
+  readonly semanticModelVersion: 2;
   readonly spaces: readonly SemanticSpaceUnderstanding[];
   readonly sharedWalls: readonly SharedWallRelationship[];
   readonly unclaimedFaceIds: readonly FaceId[];
@@ -120,10 +124,10 @@ interface ClearRegion {
  */
 export function deriveArchitecturalUnderstanding(
   topologyValue: TopologyV2,
-  spacesValue: SemanticSpacesV1,
+  spacesValue: SemanticSpacesV2,
 ): ArchitecturalUnderstandingV1 {
   const topology = validateTopologyV2(topologyValue, "architecturalUnderstanding.topology");
-  const spaces = validateSemanticSpacesV1(spacesValue, topology, "architecturalUnderstanding.spaces");
+  const spaces = validateSemanticSpacesV2(spacesValue, topology, "architecturalUnderstanding.spaces");
   const faces = extractBoundedFaces(topology).faces;
   const facesById = new Map(faces.map((face) => [face.id, face]));
   const spacesByFaceId = new Map(spaces.spaces.map((space) => [space.faceId, space]));
@@ -166,6 +170,8 @@ export function deriveArchitecturalUnderstanding(
       spaceId: space.id,
       name: space.name,
       category: space.category,
+      architecturalRole: space.architecturalRole,
+      enclosure: space.enclosure,
       faceId: space.faceId,
       face,
       centreLineAreaUm2: face.areaUm2,
@@ -198,7 +204,7 @@ export function deriveArchitecturalUnderstanding(
   return {
     modelVersion: 1,
     topologyModelVersion: 1,
-    semanticModelVersion: 1,
+    semanticModelVersion: 2,
     spaces: understoodSpaces,
     sharedWalls,
     unclaimedFaceIds: faces.map((face) => face.id).filter((identity) => !claimedFaceIds.has(identity)).sort(),

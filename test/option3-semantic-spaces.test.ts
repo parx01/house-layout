@@ -3,6 +3,7 @@ import { describe, expect, it } from "vitest";
 import {
   createOption3SemanticMappingMarkdown,
   createOption3SemanticOverlaySvg,
+  createOption3SpecialSpaceClassificationMarkdown,
 } from "../src/dev/option3-semantic-artifacts.js";
 import { loadProjectValue, parseProjectJson, serializeProject } from "../src/persistence/project-storage.js";
 import {
@@ -11,7 +12,7 @@ import {
 } from "../src/project/option3-baseline.js";
 import {
   createOption3SemanticSpaceMappingRows,
-  createOption3SemanticSpacesV1,
+  createOption3SemanticSpacesV2,
 } from "../src/project/option3-semantic-spaces.js";
 import { createOption3TopologyV2 } from "../src/project/option3-topology.js";
 import { extractBoundedFaces } from "../src/spaces/extract-faces.js";
@@ -21,17 +22,17 @@ const deferredSpaces = { status: "deferred", targetStage: "A2", modelVersion: nu
 describe("A3.2 curated Option-3 semantic mapping", () => {
   it("matches the deterministic 13-space golden fixture exactly", () => {
     const fixture = JSON.parse(readFileSync(
-      new URL("../fixtures/option-3-semantic-spaces-v1.json", import.meta.url),
+      new URL("../fixtures/option-3-semantic-spaces-v2.json", import.meta.url),
       "utf8",
     ));
-    expect(createOption3SemanticSpacesV1()).toEqual(fixture);
+    expect(createOption3SemanticSpacesV2()).toEqual(fixture);
     expect(createOption3ProjectV2().spaces).toEqual(fixture);
   });
 
   it("binds each persistent SpaceId to exactly one existing face", () => {
     const topology = createOption3TopologyV2();
     const faceIds = extractBoundedFaces(topology).faces.map((face) => face.id);
-    const spaces = createOption3SemanticSpacesV1().spaces;
+    const spaces = createOption3SemanticSpacesV2().spaces;
     expect(spaces).toHaveLength(13);
     expect(new Set(spaces.map((space) => space.id)).size).toBe(13);
     expect(new Set(spaces.map((space) => space.faceId)).size).toBe(13);
@@ -99,6 +100,10 @@ describe("A3.2 curated Option-3 semantic mapping", () => {
       new URL("../dist/diagnostics/option-3-semantic-spaces-overlay.svg", import.meta.url),
       "utf8",
     );
+    const classification = readFileSync(
+      new URL("../docs/option-3-special-space-classification.md", import.meta.url),
+      "utf8",
+    );
     expect(markdown).toBe(createOption3SemanticMappingMarkdown());
     expect(svg).toBe(createOption3SemanticOverlaySvg());
     expect(svg).toContain('../dist/assets/option-3-reference.png');
@@ -108,5 +113,7 @@ describe("A3.2 curated Option-3 semantic mapping", () => {
     expect(svg.match(/class="semantic-label"/g)).toHaveLength(13);
     expect(svg.match(/class="wall-band"/g)).toHaveLength(41);
     expect(markdown).toContain("`PUJA RM.` is a three-sided alcove open to");
+    expect(classification).toBe(createOption3SpecialSpaceClassificationMarkdown());
+    expect(classification).toContain("13 spaces; 0 open-to-sky in Option-3");
   });
 });

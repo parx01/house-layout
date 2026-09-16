@@ -14,25 +14,35 @@ export declare function validateProjectV2(value: unknown): ProjectV2;
  * the legacy room rectangles as topology.
  */
 export declare function normalizeProjectV2(value: unknown): ProjectV2;
-export declare function migrateProjectV2A1ToRevision5(value: unknown): ProjectV2;
-export declare function migrateProjectV2Revision2To5(value: unknown): ProjectV2;
+export declare function migrateProjectV2A1ToRevision6(value: unknown): ProjectV2;
+export declare function migrateProjectV2Revision2To6(value: unknown): ProjectV2;
 /**
  * Revision 3 required the spaces slot to be deferred. Validate that historical
  * meaning before permitting semantic spaces in later revisions.
  */
-export declare function migrateProjectV2Revision3To5(value: unknown): ProjectV2;
-/** Revision 4 introduced active semantic spaces while retaining the legacy authority restriction. */
-export declare function migrateProjectV2Revision4To5(value: unknown): ProjectV2;
-/** @deprecated Use migrateProjectV2A1ToRevision5. Retained as a source-compatible normalizer. */
-export declare const migrateProjectV2A1ToRevision3: typeof migrateProjectV2A1ToRevision5;
-/** @deprecated Use migrateProjectV2A1ToRevision5. Retained as a source-compatible normalizer. */
-export declare const migrateProjectV2A1ToRevision4: typeof migrateProjectV2A1ToRevision5;
-/** @deprecated Use migrateProjectV2Revision2To5. Retained as a source-compatible normalizer. */
-export declare const migrateProjectV2Revision2To3: typeof migrateProjectV2Revision2To5;
-/** @deprecated Use migrateProjectV2Revision2To5. Retained as a source-compatible normalizer. */
-export declare const migrateProjectV2Revision2To4: typeof migrateProjectV2Revision2To5;
-/** @deprecated Use migrateProjectV2Revision3To5. Retained as a source-compatible normalizer. */
-export declare const migrateProjectV2Revision3To4: typeof migrateProjectV2Revision3To5;
+export declare function migrateProjectV2Revision3To6(value: unknown): ProjectV2;
+/** Revision 4 introduced active V1 semantic spaces while retaining the legacy authority restriction. */
+export declare function migrateProjectV2Revision4To6(value: unknown): ProjectV2;
+/** Revision 5 made topology authoritative but still stored semantic-space model V1. */
+export declare function migrateProjectV2Revision5To6(value: unknown): ProjectV2;
+/** @deprecated Use migrateProjectV2A1ToRevision6. Retained as a source-compatible normalizer. */
+export declare const migrateProjectV2A1ToRevision5: typeof migrateProjectV2A1ToRevision6;
+/** @deprecated Use migrateProjectV2A1ToRevision6. Retained as a source-compatible normalizer. */
+export declare const migrateProjectV2A1ToRevision3: typeof migrateProjectV2A1ToRevision6;
+/** @deprecated Use migrateProjectV2A1ToRevision6. Retained as a source-compatible normalizer. */
+export declare const migrateProjectV2A1ToRevision4: typeof migrateProjectV2A1ToRevision6;
+/** @deprecated Use migrateProjectV2Revision2To6. Retained as a source-compatible normalizer. */
+export declare const migrateProjectV2Revision2To5: typeof migrateProjectV2Revision2To6;
+/** @deprecated Use migrateProjectV2Revision2To6. Retained as a source-compatible normalizer. */
+export declare const migrateProjectV2Revision2To3: typeof migrateProjectV2Revision2To6;
+/** @deprecated Use migrateProjectV2Revision2To6. Retained as a source-compatible normalizer. */
+export declare const migrateProjectV2Revision2To4: typeof migrateProjectV2Revision2To6;
+/** @deprecated Use migrateProjectV2Revision3To6. Retained as a source-compatible normalizer. */
+export declare const migrateProjectV2Revision3To5: typeof migrateProjectV2Revision3To6;
+/** @deprecated Use migrateProjectV2Revision3To6. Retained as a source-compatible normalizer. */
+export declare const migrateProjectV2Revision3To4: typeof migrateProjectV2Revision3To6;
+/** @deprecated Use migrateProjectV2Revision4To6. Retained as a source-compatible normalizer. */
+export declare const migrateProjectV2Revision4To5: typeof migrateProjectV2Revision4To6;
 export declare function detectProjectVersion(value: unknown): 1 | 2;
 export declare function validateLegacyProjectEnvelopeV1(value: unknown): LegacyProjectEnvelopeV1;
 //# sourceMappingURL=validation.d.ts.map

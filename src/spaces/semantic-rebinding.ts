@@ -3,8 +3,8 @@ import type { TopologyV2, WallId } from "../topology/model.js";
 import { extractBoundedFaces } from "./extract-faces.js";
 import type { DerivedBoundedFace, FaceId } from "./model.js";
 import {
-  validateSemanticSpacesV1,
-  type SemanticSpacesV1,
+  validateSemanticSpacesV2,
+  type SemanticSpacesV2,
   type SpaceId,
 } from "./semantic-model.js";
 
@@ -56,7 +56,7 @@ export interface SemanticReconciliationReport {
 export type SemanticReconciliationResult =
   | {
       readonly status: "resolved";
-      readonly spaces: SemanticSpacesV1;
+      readonly spaces: SemanticSpacesV2;
       readonly report: SemanticReconciliationReport & { readonly status: "resolved" };
     }
   | {
@@ -79,11 +79,11 @@ interface OverlapCandidate {
  * human remapping workflow.
  */
 export function reconcileSemanticSpaces(
-  spacesValue: SemanticSpacesV1,
+  spacesValue: SemanticSpacesV2,
   previousTopology: TopologyV2,
   candidateTopology: TopologyV2,
 ): SemanticReconciliationResult {
-  const spaces = validateSemanticSpacesV1(spacesValue, previousTopology, "spaces");
+  const spaces = validateSemanticSpacesV2(spacesValue, previousTopology, "spaces");
   const previousFaces = extractBoundedFaces(previousTopology).faces;
   const candidateFaces = extractBoundedFaces(candidateTopology).faces;
   const previousById = new Map(previousFaces.map((face) => [face.id, face]));
@@ -159,9 +159,9 @@ export function reconcileSemanticSpaces(
     return { status: "remapRequired", report: { status: "remapRequired", ...reportBase } };
   }
 
-  const reboundSpaces: SemanticSpacesV1 = {
+  const reboundSpaces: SemanticSpacesV2 = {
     status: "active",
-    modelVersion: 1,
+    modelVersion: 2,
     spaces: spaces.spaces.map((space) => ({
       ...space,
       faceId: reboundBySpaceId.get(space.id) ?? space.faceId,
@@ -169,7 +169,7 @@ export function reconcileSemanticSpaces(
   };
   return {
     status: "resolved",
-    spaces: validateSemanticSpacesV1(reboundSpaces, candidateTopology, "spaces"),
+    spaces: validateSemanticSpacesV2(reboundSpaces, candidateTopology, "spaces"),
     report: { status: "resolved", ...reportBase },
   };
 }

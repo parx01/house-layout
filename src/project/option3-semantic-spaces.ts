@@ -3,9 +3,11 @@ import { extractBoundedFaces } from "../spaces/extract-faces.js";
 import { faceId, type FaceId } from "../spaces/model.js";
 import {
   spaceId,
-  validateSemanticSpacesV1,
-  type SemanticSpacesV1,
+  validateSemanticSpacesV2,
+  type ArchitecturalSpaceRole,
+  type SemanticSpacesV2,
   type SpaceCategory,
+  type SpaceEnclosure,
   type SpaceId,
 } from "../spaces/semantic-model.js";
 import type { WallId } from "../topology/model.js";
@@ -15,6 +17,8 @@ interface CuratedOption3SpaceBinding {
   readonly id: SpaceId;
   readonly name: string;
   readonly category: SpaceCategory;
+  readonly architecturalRole: ArchitecturalSpaceRole;
+  readonly enclosure: SpaceEnclosure;
   readonly faceId: FaceId;
   /** Curated audit note; never used to infer the binding. */
   readonly locationEvidence: string;
@@ -35,6 +39,8 @@ export const OPTION_3_CURATED_SPACE_BINDINGS: readonly CuratedOption3SpaceBindin
     "s-bedroom-1",
     "Bedroom 1",
     "room",
+    "ordinaryRoom",
+    "enclosedCovered",
     "f-dde2d722d470e5e8",
     "Rear-left bay, west of the paired rear toilet/dress core; matches the left BED ROOM label.",
   ),
@@ -42,6 +48,8 @@ export const OPTION_3_CURATED_SPACE_BINDINGS: readonly CuratedOption3SpaceBindin
     "s-toilet-1",
     "Toilet 1",
     "service",
+    "service",
+    "enclosedCovered",
     "f-4500a68c39844fc4",
     "Rear wet core, upper-left cell between the rear wall and rear wet-room split.",
   ),
@@ -49,6 +57,8 @@ export const OPTION_3_CURATED_SPACE_BINDINGS: readonly CuratedOption3SpaceBindin
     "s-dress-1",
     "Dress 1",
     "storage",
+    "storage",
+    "enclosedCovered",
     "f-25299ab9d0600da6",
     "Rear wet core, lower-left cell directly below Toilet 1; matches the left DRESS. label.",
   ),
@@ -56,6 +66,8 @@ export const OPTION_3_CURATED_SPACE_BINDINGS: readonly CuratedOption3SpaceBindin
     "s-toilet-2",
     "Toilet 2",
     "service",
+    "service",
+    "enclosedCovered",
     "f-41bc3b811ac8bc6a",
     "Rear wet core, upper-right cell between the rear wall and rear wet-room split.",
   ),
@@ -63,6 +75,8 @@ export const OPTION_3_CURATED_SPACE_BINDINGS: readonly CuratedOption3SpaceBindin
     "s-dress-2",
     "Dress 2",
     "storage",
+    "storage",
+    "enclosedCovered",
     "f-07944bbfa1fe0b50",
     "Rear wet core, lower-right cell directly below Toilet 2; matches the right DRESS. label.",
   ),
@@ -70,6 +84,8 @@ export const OPTION_3_CURATED_SPACE_BINDINGS: readonly CuratedOption3SpaceBindin
     "s-bedroom-2",
     "Bedroom 2",
     "room",
+    "ordinaryRoom",
+    "enclosedCovered",
     "f-46f1f10484862bb1",
     "Rear-right bay, east of the paired rear toilet/dress core; matches the right BED ROOM label.",
   ),
@@ -77,6 +93,8 @@ export const OPTION_3_CURATED_SPACE_BINDINGS: readonly CuratedOption3SpaceBindin
     "s-lobby-dining-puja",
     "Lobby / Dining with Puja Alcove",
     "other",
+    "circulation",
+    "enclosedCovered",
     "f-c26ea4cfc8e5967d",
     "Large central face. The reference's PUJA RM. alcove has three walls and is open on its right to LOBBY / DINING, so both labels occupy one canonical face.",
   ),
@@ -84,6 +102,8 @@ export const OPTION_3_CURATED_SPACE_BINDINGS: readonly CuratedOption3SpaceBindin
     "s-kitchen",
     "Kitchen",
     "service",
+    "service",
+    "enclosedCovered",
     "f-995c81a969eb9c62",
     "Left-middle closed cell below the puja/lobby opening and above the staircase; matches KITCHEN.",
   ),
@@ -91,6 +111,8 @@ export const OPTION_3_CURATED_SPACE_BINDINGS: readonly CuratedOption3SpaceBindin
     "s-staircase",
     "Staircase",
     "circulation",
+    "staircase",
+    "enclosedCovered",
     "f-5bd20450438f7e84",
     "Left-front stepped cell below Kitchen; matches STAIRCASE and its upper landing projection.",
   ),
@@ -98,6 +120,8 @@ export const OPTION_3_CURATED_SPACE_BINDINGS: readonly CuratedOption3SpaceBindin
     "s-living-room",
     "Living Room",
     "room",
+    "ordinaryRoom",
+    "enclosedCovered",
     "f-b90cdc1e2457fadd",
     "Front-left room east of the staircase and west of the wash/toilet stack; matches LIVING ROOM.",
   ),
@@ -105,6 +129,8 @@ export const OPTION_3_CURATED_SPACE_BINDINGS: readonly CuratedOption3SpaceBindin
     "s-wash-area",
     "Wash Area",
     "service",
+    "service",
+    "enclosedCovered",
     "f-c4be109283d52551",
     "Front central stack, upper cell between Living Room and Guest Bedroom; matches W.B.AREA.",
   ),
@@ -112,6 +138,8 @@ export const OPTION_3_CURATED_SPACE_BINDINGS: readonly CuratedOption3SpaceBindin
     "s-toilet-3",
     "Toilet 3",
     "service",
+    "service",
+    "enclosedCovered",
     "f-ce4b77ad898b046f",
     "Front central stack, lower cell directly below Wash Area; matches TOILET.",
   ),
@@ -119,21 +147,25 @@ export const OPTION_3_CURATED_SPACE_BINDINGS: readonly CuratedOption3SpaceBindin
     "s-guest-bedroom",
     "Guest Bedroom",
     "room",
+    "ordinaryRoom",
+    "enclosedCovered",
     "f-9b08821b6b5e1967",
     "Front-right bay east of the wash/toilet stack; matches GUEST BED ROOM.",
   ),
 ] as const;
 
-export function createOption3SemanticSpacesV1(): SemanticSpacesV1 {
+export function createOption3SemanticSpacesV2(): SemanticSpacesV2 {
   const topology = createOption3TopologyV2();
-  return validateSemanticSpacesV1(
+  return validateSemanticSpacesV2(
     {
       status: "active",
-      modelVersion: 1,
-      spaces: OPTION_3_CURATED_SPACE_BINDINGS.map(({ id, name, category, faceId: boundFaceId }) => ({
+      modelVersion: 2,
+      spaces: OPTION_3_CURATED_SPACE_BINDINGS.map(({ id, name, category, architecturalRole, enclosure, faceId: boundFaceId }) => ({
         id,
         name,
         category,
+        architecturalRole,
+        enclosure,
         faceId: boundFaceId,
       })),
     },
@@ -141,6 +173,9 @@ export function createOption3SemanticSpacesV1(): SemanticSpacesV1 {
     "option3.spaces",
   );
 }
+
+/** @deprecated Use createOption3SemanticSpacesV2. The returned current model is V2. */
+export const createOption3SemanticSpacesV1 = createOption3SemanticSpacesV2;
 
 /** Derived audit rows. Areas and boundary references are never persisted. */
 export function createOption3SemanticSpaceMappingRows(): readonly Option3SemanticSpaceMappingRow[] {
@@ -162,8 +197,10 @@ function binding(
   id: string,
   name: string,
   category: SpaceCategory,
+  architecturalRole: ArchitecturalSpaceRole,
+  enclosure: SpaceEnclosure,
   boundFaceId: string,
   locationEvidence: string,
 ): CuratedOption3SpaceBinding {
-  return { id: spaceId(id), name, category, faceId: faceId(boundFaceId), locationEvidence };
+  return { id: spaceId(id), name, category, architecturalRole, enclosure, faceId: faceId(boundFaceId), locationEvidence };
 }

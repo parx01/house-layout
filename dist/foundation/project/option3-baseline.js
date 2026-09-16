@@ -1,7 +1,7 @@
 import { createOption3Site } from "../core/site.js";
 import { legacyMmToUm, umToLegacyMm } from "../core/units.js";
 import { legacyEditorGeometryEquals } from "./legacy-geometry.js";
-import { createOption3SemanticSpacesV1 } from "./option3-semantic-spaces.js";
+import { createOption3SemanticSpacesV2 } from "./option3-semantic-spaces.js";
 import { createOption3TopologyV2 } from "./option3-topology.js";
 export const OPTION_3_REFERENCE_SHA256 = "56dbc61d59013c5f5247af5f684059097bb233da960379551b78c58f7ef01a37";
 export const OPTION_3_V1_RECOVERY_STATE = {
@@ -49,7 +49,7 @@ export function createOption3ProjectV2(legacyState) {
     };
     return {
         schemaVersion: 2,
-        schemaRevision: 5,
+        schemaRevision: 6,
         projectId: "option-3",
         name: "OPTION-3 ground floor",
         units: "um",
@@ -67,7 +67,7 @@ export function createOption3ProjectV2(legacyState) {
         },
         topology: hasCuratedTopology ? createOption3TopologyV2() : deferredModel("A2"),
         spaces: hasCuratedTopology && isUntouchedCuratedBaseline
-            ? createOption3SemanticSpacesV1()
+            ? createOption3SemanticSpacesV2()
             : deferredModel("A2"),
         openings: deferredModel("postA2"),
         dimensions: deferredModel("A2"),

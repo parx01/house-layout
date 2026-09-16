@@ -1,7 +1,7 @@
 import type { AreaUm2, LengthUm } from "../core/units.js";
 import { type TopologyV2, type WallId } from "../topology/model.js";
 import type { DerivedBoundedFace, FaceId } from "./model.js";
-import { type SemanticSpacesV1, type SpaceCategory, type SpaceId } from "./semantic-model.js";
+import { type ArchitecturalSpaceRole, type SemanticSpacesV2, type SpaceCategory, type SpaceEnclosure, type SpaceId } from "./semantic-model.js";
 export interface ArchitecturalPoint {
     /** Exact to 0.25 µm; wall faces themselves are exact to 0.5 µm. */
     readonly xUm: number;
@@ -52,6 +52,8 @@ export interface SemanticSpaceUnderstanding {
     readonly spaceId: SpaceId;
     readonly name: string;
     readonly category: SpaceCategory;
+    readonly architecturalRole: ArchitecturalSpaceRole;
+    readonly enclosure: SpaceEnclosure;
     readonly faceId: FaceId;
     /** Exact centre-line face from A2.4. This is not clear usable floor geometry. */
     readonly face: DerivedBoundedFace;
@@ -68,7 +70,7 @@ export interface SemanticSpaceUnderstanding {
 export interface ArchitecturalUnderstandingV1 {
     readonly modelVersion: 1;
     readonly topologyModelVersion: 1;
-    readonly semanticModelVersion: 1;
+    readonly semanticModelVersion: 2;
     readonly spaces: readonly SemanticSpaceUnderstanding[];
     readonly sharedWalls: readonly SharedWallRelationship[];
     readonly unclaimedFaceIds: readonly FaceId[];
@@ -77,5 +79,5 @@ export interface ArchitecturalUnderstandingV1 {
  * Pure runtime derivation from canonical topology, A2.4 faces, and A3 spaces.
  * No result from this function is persisted as architectural source geometry.
  */
-export declare function deriveArchitecturalUnderstanding(topologyValue: TopologyV2, spacesValue: SemanticSpacesV1): ArchitecturalUnderstandingV1;
+export declare function deriveArchitecturalUnderstanding(topologyValue: TopologyV2, spacesValue: SemanticSpacesV2): ArchitecturalUnderstandingV1;
 //# sourceMappingURL=architectural-understanding.d.ts.map

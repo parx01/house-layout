@@ -2,6 +2,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import {
   createOption3SemanticMappingMarkdown,
   createOption3SemanticOverlaySvg,
+  createOption3SpecialSpaceClassificationMarkdown,
 } from "../dist/foundation/dev/option3-semantic-artifacts.js";
 
 const artifacts = [
@@ -17,6 +18,10 @@ const artifacts = [
     target: new URL("../docs/option-3-semantic-space-mapping.md", import.meta.url),
     generated: createOption3SemanticMappingMarkdown(),
   },
+  {
+    target: new URL("../docs/option-3-special-space-classification.md", import.meta.url),
+    generated: createOption3SpecialSpaceClassificationMarkdown(),
+  },
 ];
 
 if (!process.argv.includes("--check")) {
@@ -27,7 +32,7 @@ for (const artifact of artifacts) {
   if (process.argv.includes("--check")) {
     const current = readFileSync(artifact.target, "utf8");
     if (current !== artifact.generated) {
-      throw new Error(`A3.2 semantic artifact is stale: ${artifact.target.pathname}`);
+      throw new Error(`Semantic diagnostic artifact is stale: ${artifact.target.pathname}`);
     }
   } else {
     writeFileSync(artifact.target, artifact.generated, "utf8");

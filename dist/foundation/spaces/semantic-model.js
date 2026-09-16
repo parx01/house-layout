@@ -1,6 +1,17 @@
 import { extractBoundedFaces } from "./extract-faces.js";
 import { faceId } from "./model.js";
 export const SPACE_CATEGORIES = ["room", "circulation", "service", "storage", "other"];
+export const ARCHITECTURAL_SPACE_ROLES = [
+    "ordinaryRoom",
+    "circulation",
+    "staircase",
+    "service",
+    "storage",
+    "courtyardVoid",
+    "otherSpecialUse",
+    "unclassified",
+];
+export const SPACE_ENCLOSURES = ["enclosedCovered", "openToSky", "unclassified"];
 export class SemanticSpaceValidationError extends Error {
     constructor(message) {
         super(message);
@@ -42,6 +53,44 @@ export function validateSemanticSpacesV1(value, topology, path = "spaces") {
     });
     return { status: "active", modelVersion: 1, spaces };
 }
+export function validateSemanticSpacesV2(value, topology, path = "spaces") {
+    const root = record(value, path);
+    exactKeys(root, ["status", "modelVersion", "spaces"], path);
+    literal(root.status, "active", `${path}.status`);
+    literal(root.modelVersion, 2, `${path}.modelVersion`);
+    if (!Array.isArray(root.spaces))
+        fail(`${path}.spaces must be an array.`);
+    const validFaceIds = new Set(extractBoundedFaces(topology).faces.map((face) => face.id));
+    const seenSpaceIds = new Set();
+    const boundFaceIds = new Set();
+    const spaces = root.spaces.map((candidate, index) => {
+        const space = validateSemanticSpaceV2(candidate, `${path}.spaces[${index}]`);
+        if (seenSpaceIds.has(space.id))
+            fail(`${path}.spaces contains duplicate space ID ${space.id}.`);
+        seenSpaceIds.add(space.id);
+        if (boundFaceIds.has(space.faceId))
+            fail(`${path}.spaces contains duplicate face binding ${space.faceId}.`);
+        boundFaceIds.add(space.faceId);
+        if (!validFaceIds.has(space.faceId)) {
+            fail(`${path}.spaces[${index}].faceId references orphaned derived face ${space.faceId}.`);
+        }
+        return space;
+    });
+    return { status: "active", modelVersion: 2, spaces };
+}
+/** Revision-safe migration. Unknown V1 intent stays explicit instead of being guessed from category/name. */
+export function migrateSemanticSpacesV1ToV2(value, topology, path = "spaces") {
+    const previous = validateSemanticSpacesV1(value, topology, path);
+    return validateSemanticSpacesV2({
+        status: "active",
+        modelVersion: 2,
+        spaces: previous.spaces.map((space) => ({
+            ...space,
+            architecturalRole: "unclassified",
+            enclosure: "unclassified",
+        })),
+    }, topology, path);
+}
 function validateSemanticSpace(value, path) {
     const entry = record(value, path);
     exactKeys(entry, ["id", "name", "category", "faceId"], path);
@@ -57,9 +106,26 @@ function validateSemanticSpace(value, path) {
         faceId: faceId(stringValue(entry.faceId, `${path}.faceId`)),
     };
 }
+function validateSemanticSpaceV2(value, path) {
+    const entry = record(value, path);
+    exactKeys(entry, ["id", "name", "category", "faceId", "architecturalRole", "enclosure"], path);
+    const core = validateSemanticSpace({ id: entry.id, name: entry.name, category: entry.category, faceId: entry.faceId }, path);
+    const architecturalRole = enumValue(entry.architecturalRole, ARCHITECTURAL_SPACE_ROLES, `${path}.architecturalRole`);
+    const enclosure = enumValue(entry.enclosure, SPACE_ENCLOSURES, `${path}.enclosure`);
+    if (architecturalRole === "courtyardVoid" && enclosure !== "openToSky") {
+        fail(`${path}.enclosure must equal "openToSky" when architecturalRole is "courtyardVoid".`);
+    }
+    return { ...core, architecturalRole, enclosure };
+}
 function category(value, path) {
     if (typeof value !== "string" || !SPACE_CATEGORIES.includes(value)) {
         fail(`${path} must be one of ${SPACE_CATEGORIES.join(", ")}.`);
+    }
+    return value;
+}
+function enumValue(value, allowed, path) {
+    if (typeof value !== "string" || !allowed.includes(value)) {
+        fail(`${path} must be one of ${allowed.join(", ")}.`);
     }
     return value;
 }

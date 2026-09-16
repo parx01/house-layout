@@ -37,7 +37,7 @@ describe("ProjectV2 validation and legacy recovery", () => {
 
     const recovered = parseProjectJson(JSON.stringify(a1Save));
     expect(recovered.schemaVersion).toBe(2);
-    expect(recovered.schemaRevision).toBe(5);
+    expect(recovered.schemaRevision).toBe(6);
     expect(recovered.legacyEditorState).toEqual(a1Save.legacyEditorState);
     expect(recovered.topology).toEqual({ status: "deferred", targetStage: "A2", modelVersion: null, data: null });
     expect(recovered.building.status).toBe("topologyDeferred");

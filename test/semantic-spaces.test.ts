@@ -10,6 +10,8 @@ import { extractBoundedFaces } from "../src/spaces/extract-faces.js";
 import {
   spaceId,
   validateSemanticSpacesV1,
+  type SemanticSpaceV1,
+  type SemanticSpaceV2,
   type SemanticSpacesV1,
 } from "../src/spaces/semantic-model.js";
 import { twoRoomSharedWallTopology } from "./fixtures/topology.js";
@@ -32,8 +34,15 @@ function projectWithTestSpace() {
   const face = extractBoundedFaces(project.topology).faces[0]!;
   project.spaces = {
     status: "active",
-    modelVersion: 1,
-    spaces: [{ id: spaceId("s-a3-1-fixture"), name: "A3.1 validation fixture", category: "other", faceId: face.id }],
+    modelVersion: 2,
+    spaces: [{
+      id: spaceId("s-a3-1-fixture"),
+      name: "A3.1 validation fixture",
+      category: "other",
+      architecturalRole: "unclassified",
+      enclosure: "unclassified",
+      faceId: face.id,
+    }],
   };
   return project;
 }
@@ -100,6 +109,8 @@ describe("A3.1 persistent semantic spaces", () => {
       id: "s-a3-1-fixture",
       name: "A3.1 validation fixture",
       category: "other",
+      architecturalRole: "unclassified",
+      enclosure: "unclassified",
       faceId: project.spaces.status === "active" ? project.spaces.spaces[0]!.faceId : "unreachable",
     });
     expect(serializeProject(project)).not.toContain("areaUm2");
@@ -118,7 +129,7 @@ describe("A3.1 persistent semantic spaces", () => {
     revision3.schemaRevision = 3;
     revision3.spaces = { status: "deferred", targetStage: "A2", modelVersion: null, data: null };
     const migrated = parseProjectJson(JSON.stringify(revision3));
-    expect(migrated.schemaRevision).toBe(5);
+    expect(migrated.schemaRevision).toBe(6);
     expect(migrated.spaces).toEqual({ status: "deferred", targetStage: "A2", modelVersion: null, data: null });
 
     revision3.spaces = projectWithTestSpace().spaces;
@@ -147,8 +158,26 @@ describe("A3.1 persistent semantic spaces", () => {
   it("migrates revision-4 active semantic spaces without changing stable bindings", () => {
     const revision4 = projectWithTestSpace();
     revision4.schemaRevision = 4;
+    revision4.spaces = {
+      status: "active",
+      modelVersion: 1,
+      spaces: revision4.spaces.spaces.map((space: SemanticSpaceV2): SemanticSpaceV1 => ({
+        id: space.id,
+        name: space.name,
+        category: space.category,
+        faceId: space.faceId,
+      })),
+    };
     const migrated = parseProjectJson(JSON.stringify(revision4));
-    expect(migrated.schemaRevision).toBe(5);
-    expect(migrated.spaces).toEqual(revision4.spaces);
+    expect(migrated.schemaRevision).toBe(6);
+    expect(migrated.spaces).toEqual({
+      status: "active",
+      modelVersion: 2,
+      spaces: revision4.spaces.spaces.map((space: SemanticSpaceV1) => ({
+        ...space,
+        architecturalRole: "unclassified",
+        enclosure: "unclassified",
+      })),
+    });
   });
 });
