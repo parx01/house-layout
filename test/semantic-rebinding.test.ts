@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { coordinateUm } from "../src/core/units.js";
+import { coordinateUm, type LengthUm } from "../src/core/units.js";
 import { parseProjectJson, serializeProject } from "../src/persistence/project-storage.js";
 import { createOption3ProjectV2 } from "../src/project/option3-baseline.js";
 import {
@@ -11,7 +11,11 @@ import { reconcileSemanticSpaces } from "../src/spaces/semantic-rebinding.js";
 import { spaceId, type SemanticSpacesV2 } from "../src/spaces/semantic-model.js";
 import { moveWallPerpendicular } from "../src/topology/movement.js";
 import { getWallEndNode, getWallStartNode, wallId, type TopologyV2 } from "../src/topology/model.js";
-import { insertWall, splitWallAtPoint } from "../src/topology/operations.js";
+import {
+  insertWall,
+  splitWallAtPoint,
+  type TopologyChangeResult,
+} from "../src/topology/operations.js";
 import { validateTopologyV2 } from "../src/topology/validation.js";
 import { rectangleTopology, twoRoomSharedWallTopology } from "./fixtures/topology.js";
 
@@ -58,6 +62,35 @@ function setRectangleBounds(topology: TopologyV2, left: number, top: number, rig
   candidate.nodes["n-3"] = { ...candidate.nodes["n-3"], xUm: coordinateUm(right), yUm: coordinateUm(bottom) };
   candidate.nodes["n-4"] = { ...candidate.nodes["n-4"], xUm: coordinateUm(left), yUm: coordinateUm(bottom) };
   return validateTopologyV2(candidate);
+}
+
+function addDetachedRectangle(
+  topology: TopologyV2,
+  bounds: { readonly left: number; readonly top: number; readonly right: number; readonly bottom: number },
+  thicknessUm: LengthUm,
+  idSeed: string,
+): TopologyChangeResult {
+  const points = [
+    [bounds.left, bounds.top, bounds.right, bounds.top],
+    [bounds.right, bounds.top, bounds.right, bounds.bottom],
+    [bounds.right, bounds.bottom, bounds.left, bounds.bottom],
+    [bounds.left, bounds.bottom, bounds.left, bounds.top],
+  ] as const;
+  let current = topology;
+  let result: TopologyChangeResult | undefined;
+  for (const [index, [startX, startY, endX, endY]] of points.entries()) {
+    result = insertWall(
+      current,
+      {
+        start: { xUm: coordinateUm(startX), yUm: coordinateUm(startY) },
+        end: { xUm: coordinateUm(endX), yUm: coordinateUm(endY) },
+        thicknessUm,
+      },
+      { idSeed: `${idSeed}-${index + 1}` },
+    );
+    current = result.topology;
+  }
+  return result!;
 }
 
 describe("A3.3 deterministic semantic rebinding", () => {
@@ -147,6 +180,27 @@ describe("A3.3 deterministic semantic rebinding", () => {
       reconcileSemanticSpaces(spacesFor(before), before, after),
     );
   });
+
+  it("requires remapping when a disconnected new bounded face is unclaimed", () => {
+    const before = rectangleTopology();
+    const spaces = spacesFor(before);
+    const change = addDetachedRectangle(
+      before,
+      { left: 6_000_000, top: 0, right: 8_000_000, bottom: 2_000_000 },
+      before.walls[wallId("w-left")]!.thicknessUm,
+      "semantic-detached-face",
+    );
+    const result = reconcileSemanticSpaces(spaces, before, change.topology);
+
+    expect(result.status).toBe("remapRequired");
+    expect(result.report.preservedBindings).toHaveLength(1);
+    expect(result.report.reboundBindings).toEqual([]);
+    expect(result.report.unresolvedSpaces).toEqual([]);
+    expect(result.report.newFaceIds).toHaveLength(1);
+    expect(result.report.unclaimedFaceIds).toEqual(result.report.newFaceIds);
+    expect("spaces" in result).toBe(false);
+    expect(spaces.spaces).toHaveLength(1);
+  });
 });
 
 describe("A3.3 curated Option-3 project integration", () => {
@@ -214,6 +268,34 @@ describe("A3.3 curated Option-3 project integration", () => {
       expect.objectContaining({ spaceId: "s-living-room", reason: "faceSplit" }),
     ]);
     expect(result.reconciliation.unclaimedFaceIds).toHaveLength(2);
+    expect(before).toEqual(snapshot);
+  });
+
+  it("atomically rejects an unclaimed detached Option-3 face without creating a SpaceId", () => {
+    const before = createOption3ProjectV2();
+    const snapshot = structuredClone(before);
+    if (before.topology.status !== "active" || before.spaces.status !== "active") {
+      throw new Error("Active baseline required.");
+    }
+    const originalSpaceIds = before.spaces.spaces.map((space) => space.id);
+    const change = addDetachedRectangle(
+      before.topology,
+      { left: 2_000_000, top: 20_000_000, right: 4_000_000, bottom: 22_000_000 },
+      before.topology.walls[wallId("w-option3-front-wet-split-1")]!.thicknessUm,
+      "option3-detached-face",
+    );
+    const result = applyTopologyChangeResult(before, change);
+
+    expect(result.status).toBe("remapRequired");
+    if (result.status !== "remapRequired") throw new Error("Remapping must be required.");
+    expect(result.reconciliation.preservedBindings).toHaveLength(13);
+    expect(result.reconciliation.reboundBindings).toEqual([]);
+    expect(result.reconciliation.unresolvedSpaces).toEqual([]);
+    expect(result.reconciliation.newFaceIds).toHaveLength(1);
+    expect(result.reconciliation.unclaimedFaceIds).toEqual(result.reconciliation.newFaceIds);
+    expect(extractBoundedFaces(result.candidateTopology).faces).toHaveLength(14);
+    expect("project" in result).toBe(false);
+    expect(before.spaces.spaces.map((space) => space.id)).toEqual(originalSpaceIds);
     expect(before).toEqual(snapshot);
   });
 });

@@ -5,7 +5,6 @@ import type { ProjectV2 } from "../src/project/schema.js";
 import { applyTopologyMoveResult, ProjectTopologyUpdateError } from "../src/project/topology-update.js";
 import { validateProjectV2 } from "../src/project/validation.js";
 import { extractBoundedFaces } from "../src/spaces/extract-faces.js";
-import { spaceId } from "../src/spaces/semantic-model.js";
 import { moveWallPerpendicular } from "../src/topology/movement.js";
 import { wallId, type TopologyV2 } from "../src/topology/model.js";
 import { createTopologySvgRenderModel } from "../src/ui/topology-renderer.js";
@@ -23,22 +22,8 @@ function representativeMove() {
   return moveWallPerpendicular(project.topology, wallId("w-option3-front-wet-split-1"), 100_000);
 }
 
-function projectWithBoundSpace() {
-  const project = structuredClone(activeBaseline()) as any;
-  const face = extractBoundedFaces(project.topology).faces[0]!;
-  project.spaces = {
-    status: "active",
-    modelVersion: 2,
-    spaces: [{
-      id: spaceId("s-authority-test"),
-      name: "Authority transition fixture",
-      category: "other",
-      architecturalRole: "unclassified",
-      enclosure: "unclassified",
-      faceId: face.id,
-    }],
-  };
-  return validateProjectV2(project);
+function projectWithActiveSpaces() {
+  return validateProjectV2(structuredClone(activeBaseline()));
 }
 
 describe("A2.6.1 canonical project topology updates", () => {
@@ -68,7 +53,7 @@ describe("A2.6.1 canonical project topology updates", () => {
   });
 
   it("preserves persistent semantic bindings when A2.5 preserves face IDs", () => {
-    const before = projectWithBoundSpace();
+    const before = projectWithActiveSpaces();
     if (before.topology.status !== "active") throw new Error("Topology must be active.");
     const movement = moveWallPerpendicular(
       before.topology,
@@ -81,7 +66,7 @@ describe("A2.6.1 canonical project topology updates", () => {
   });
 
   it("rejects a forged A2.5 result that replaces a wall identity", () => {
-    const before = projectWithBoundSpace();
+    const before = projectWithActiveSpaces();
     if (before.topology.status !== "active" || before.spaces.status !== "active") {
       throw new Error("Active topology and spaces are required.");
     }

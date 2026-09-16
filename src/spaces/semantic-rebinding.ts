@@ -75,8 +75,8 @@ interface OverlapCandidate {
  * Face IDs that survive are preserved directly. A changed FaceId is rebound
  * only when exact polygon overlap establishes a mutual one-to-one
  * correspondence and the faces retain canonical boundary geometry. Splits,
- * merges, deletions, and weak/ambiguous matches remain explicit for a later
- * human remapping workflow.
+ * merges, deletions, weak/ambiguous matches, and unclaimed candidate faces
+ * remain explicit for a later human remapping workflow.
  */
 export function reconcileSemanticSpaces(
   spacesValue: SemanticSpacesV2,
@@ -155,7 +155,7 @@ export function reconcileSemanticSpaces(
     unclaimedFaceIds,
   };
 
-  if (unresolvedSpaces.length > 0) {
+  if (unresolvedSpaces.length > 0 || unclaimedFaceIds.length > 0) {
     return { status: "remapRequired", report: { status: "remapRequired", ...reportBase } };
   }
 

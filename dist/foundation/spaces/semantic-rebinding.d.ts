@@ -55,8 +55,8 @@ export type SemanticReconciliationResult = {
  * Face IDs that survive are preserved directly. A changed FaceId is rebound
  * only when exact polygon overlap establishes a mutual one-to-one
  * correspondence and the faces retain canonical boundary geometry. Splits,
- * merges, deletions, and weak/ambiguous matches remain explicit for a later
- * human remapping workflow.
+ * merges, deletions, weak/ambiguous matches, and unclaimed candidate faces
+ * remain explicit for a later human remapping workflow.
  */
 export declare function reconcileSemanticSpaces(spacesValue: SemanticSpacesV2, previousTopology: TopologyV2, candidateTopology: TopologyV2): SemanticReconciliationResult;
 //# sourceMappingURL=semantic-rebinding.d.ts.map
