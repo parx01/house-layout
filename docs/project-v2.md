@@ -26,6 +26,32 @@ ProjectV2
 └─ recovery fixture and reference-image identity
 ```
 
+## General-editor decision
+
+ProjectV2 is now explicitly considered the **historical/transitional Option-3 project contract**, not the permanent schema for the finished editor.
+
+The accepted product architecture requires Plan 66 to support arbitrary user-authored orthogonal floor plans and new projects that do not depend on Option-3 fixtures, IDs, reference images, legacy rectangles, or its specific 66% rule.
+
+Current ProjectV2 semantics hard-code several Option-3-specific concepts, including project identity/recovery and the current site's policy/provenance shape. Those meanings must remain frozen for compatibility rather than being silently broadened.
+
+Therefore the existing schema-evolution rule is now concretely triggered:
+
+> Before general topology authoring is considered complete, introduce `schemaVersion: 3` (or the next explicit major schema) and an explicit ProjectV2 → ProjectV3 migration.
+
+The generic next-major project schema must support at least:
+
+- arbitrary persistent project identity/name
+- new project creation without Option-3 recovery/reference assets
+- empty or active canonical topology
+- semantic spaces that can be created by the user as faces emerge
+- project-specific rectangular site dimensions initially
+- project-specific front/road/orientation metadata
+- a generic rational coverage-policy/provenance model, including a not-configured state if appropriate
+- stable versioned topology/space/opening/dimension/site-object submodels
+- strict validation and deterministic migration.
+
+ProjectV2 remains fully supported as an Option-3 migration/reference document. See `docs/general-floor-plan-editor-architecture.md`.
+
 ## Schema-evolution policy
 
 `schemaVersion: 2` has an explicit `schemaRevision: 6`. Openings, dimensions, and site objects remain stable deferred envelopes with `status: "deferred"`, a target stage, and `modelVersion: null` / `data: null`. A2.1 activated the already-reserved topology key with a separately versioned and strictly validated canonical node/wall graph. A3.1 activated the already-reserved spaces key with a separately versioned semantic model; A3.2 populates that model only for the untouched curated Option-3 baseline, and A3.5 revision 6 adds explicit role/enclosure semantics.
@@ -42,16 +68,18 @@ A3.2 does not change the schema or persist derived geometry. It activates 13 exp
 
 The original A1 ProjectV2 documents had no `schemaRevision`, future-model slots, or road-width provenance. The loader recognizes exactly that frozen top-level shape and performs a one-way normalization to current revision 6 with deferred topology and spaces. Unknown fields and unknown explicit revisions remain errors. Automated coverage preserves an A1-shaped save, reloads it, verifies all deferred slots, and round-trips the normalized document.
 
-If later work cannot fit cleanly in the reserved/versioned slots, it must introduce `schemaVersion: 3` and an explicit ProjectV2-to-ProjectV3 migration instead of changing ProjectV2 semantics.
+Do not reinterpret ProjectV2 fields for generic authoring. General document identity/reference/site-policy changes belong to ProjectV3 and explicit migration.
 
 ## Road-width provenance
 
-The front road edge remains known. `road.widthUm` is 12,000,000 because the supplied `OPTION-3.pdf` drawing explicitly says `ROAD 12.00M WIDE`. Its metadata is deliberately recorded as `referencePlanSuppliedUnverified`; it is not treated as an independently surveyed or regulatory value.
+The front road edge remains known for Option-3. `road.widthUm` is 12,000,000 because the supplied `OPTION-3.pdf` drawing explicitly says `ROAD 12.00M WIDE`. Its metadata is deliberately recorded as `referencePlanSuppliedUnverified`; it is not treated as an independently surveyed or regulatory value and must not become a generic-project default.
 
 ## Reference-image calibration
 
 The reference image stays fixed to the original 49 ft 2 in by 79 ft 2 in Option-3 calibration. Editing experimental site frontage/depth updates the property boundary, grid, buildable target overlays, calculations, and drawing frame, but does not stretch the source image.
 
-The legacy room rectangles remain available only so the visible prototype can continue to be inspected. They are not an intermediate ProjectV2 geometry model and are not used as an authoritative building footprint.
+Future generic projects may have no reference image at all; this fixed calibration is a ProjectV2/Option-3 recovery concern.
 
-The side and rear values are editable design targets, not verified regulatory setbacks. `frontMinUm` remains `null`. The warning vocabulary reserves `regulatoryViolation`, but A1 never emits that category because no verified local regulation dataset has been supplied.
+The legacy room rectangles remain available only so the historical prototype can continue to be inspected/recovered. They are not an intermediate canonical geometry model and are not used as an authoritative building footprint.
+
+The side and rear values are editable design targets, not verified regulatory setbacks. `frontMinUm` remains `null`. The warning vocabulary reserves `regulatoryViolation`, but no verified local regulation dataset has been supplied.
