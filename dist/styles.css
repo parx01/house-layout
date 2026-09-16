@@ -240,7 +240,7 @@ kbd {
   cursor: pointer;
   transition: fill 120ms ease, stroke 120ms ease;
 }
-.topology-face:hover { fill: rgba(24, 169, 153, 0.17); stroke: rgba(13, 104, 112, 0.6); }
+.topology-face.hovered { fill: rgba(24, 169, 153, 0.17); stroke: rgba(13, 104, 112, 0.6); }
 .topology-face.selected { fill: rgba(244, 185, 66, 0.22); stroke: #d99a20; stroke-width: 52; }
 .topology-face-area {
   pointer-events: none;
@@ -275,7 +275,7 @@ kbd {
   fill: none;
   pointer-events: stroke;
 }
-.topology-wall-group:hover .topology-wall-band { stroke: #0e887e; opacity: 1; }
+.topology-wall-group.hovered .topology-wall-band { stroke: #0e887e; opacity: 1; }
 .topology-wall-group.selected .topology-wall-band {
   stroke: var(--amber);
   opacity: 1;
@@ -290,7 +290,7 @@ kbd {
 }
 .topology-junction-group { cursor: pointer; }
 .topology-junction-hit { fill: transparent; stroke: transparent; pointer-events: all; }
-.topology-junction-group:hover .topology-junction { fill: #c9f1eb; stroke: #0e887e; }
+.topology-junction-group.hovered .topology-junction { fill: #c9f1eb; stroke: #0e887e; }
 .topology-junction-group.selected .topology-junction {
   fill: var(--amber);
   stroke: #7b5710;

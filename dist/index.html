@@ -43,13 +43,13 @@
           <button class="tool active" data-tool="select" aria-pressed="true">
             <span class="tool-icon">↖</span><span>Select</span><kbd>V</kbd>
           </button>
-          <button class="tool" data-tool="room" aria-pressed="false" disabled title="Geometry editing begins after A2.6">
+          <button class="tool" data-tool="room" aria-pressed="false" disabled title="Geometry editing begins in B2">
             <span class="tool-icon">▭</span><span>Add room</span><kbd>R</kbd>
           </button>
-          <button class="tool" data-tool="wall" aria-pressed="false" disabled title="Geometry editing begins after A2.6">
+          <button class="tool" data-tool="wall" aria-pressed="false" disabled title="Geometry editing begins in B2">
             <span class="tool-icon">╱</span><span>Add wall</span><kbd>W</kbd>
           </button>
-          <button class="tool" id="delete-selection" disabled title="Geometry editing begins after A2.6">
+          <button class="tool" id="delete-selection" disabled title="Geometry editing begins in B2">
             <span class="tool-icon">⌫</span><span>Delete selected</span><kbd>Del</kbd>
           </button>
         </div>
@@ -87,7 +87,7 @@
 
         <section class="panel-section help-card">
           <div class="section-title">Quick use</div>
-          <p>Select a face, physical wall, or junction to inspect topology-derived details. Geometry is read-only in A2.6.</p>
+          <p>Select a semantic space, physical wall, or junction by canonical identity. Geometry remains read-only in B1.</p>
         </section>
       </aside>
 
@@ -95,7 +95,7 @@
         <div class="canvas-toolbar">
           <div>
             <strong id="canvas-title">Inspect canonical topology</strong>
-            <span id="canvas-hint">Select faces, physical walls, and junctions · read-only</span>
+            <span id="canvas-hint">Select semantic spaces, physical walls, and junctions · read-only</span>
           </div>
           <div class="canvas-controls">
             <button class="icon-button" id="zoom-out" aria-label="Zoom out">−</button>
@@ -193,7 +193,7 @@
 
         <section class="panel-section selection-section">
           <div class="section-title">Selection</div>
-          <div id="empty-selection" class="empty-selection">Select a derived face, physical wall, or canonical junction to inspect it.</div>
+          <div id="empty-selection" class="empty-selection">Select a semantic space, physical wall, or canonical junction to inspect it.</div>
           <form id="selection-form" hidden></form>
         </section>
       </aside>
@@ -201,6 +201,6 @@
 
     <div id="toast" class="toast" role="status" aria-live="polite"></div>
 
-    <script type="module" src="app.js?v=20260915-a26"></script>
+    <script type="module" src="app.js?v=20260916-b1"></script>
   </body>
 </html>

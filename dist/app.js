@@ -1,19 +1,28 @@
 import {
   areaToSquareFeet,
   calculateOption3CanvasViewBox,
+  clearCanonicalSelection,
+  clearHoveredEntity,
+  createCanonicalHitTestModel,
+  createCanonicalSelectionState,
   createOption3ProjectV2,
   createTopologySvgRenderModel,
   decimalFeetToLength,
   formatArchitecturalLength,
   formatSquareFeet,
   foundationSummary,
+  hitTestCanonicalSelection,
   lengthUmToLegacyMm,
   OPTION_3_REFERENCE_DEPTH_UM,
   OPTION_3_REFERENCE_WIDTH_UM,
   parseArchitecturalLength,
   projectToLegacyEditorState,
   readProjectFromStorage,
+  reconcileCanonicalSelection,
+  resolveCanonicalSelection,
+  selectCanonicalEntity,
   serializeProject,
+  setHoveredEntity,
   updateProjectFromLegacyEditorState,
   validateProjectV2,
   writeProjectToStorage,
@@ -25,7 +34,7 @@ const FT2_TO_MM2 = 92_903.04;
 let project = createOption3ProjectV2();
 let projectLoadError = "";
 let state = loadState();
-let selected = null;
+let selectionState = createCanonicalSelectionState();
 let activeTool = "select";
 let history = [];
 let future = [];
@@ -33,6 +42,7 @@ let zoom = 1;
 let toastTimer;
 let showLegacyComparison = false;
 let topologyRenderModel = null;
+let selectionHitModel = null;
 
 const svg = document.querySelector("#plan-svg");
 const faceLayer = document.querySelector("#face-layer");
@@ -100,7 +110,6 @@ function undo() {
   if (!history.length) return;
   future.push(snapshot());
   ({ state, project } = history.pop());
-  selected = null;
   render();
   saveState();
 }
@@ -109,7 +118,6 @@ function redo() {
   if (!future.length) return;
   history.push(snapshot());
   ({ state, project } = future.pop());
-  selected = null;
   render();
   saveState();
 }
@@ -219,6 +227,28 @@ function renderSite() {
   siteLayer.append(road);
 }
 
+function sameEntity(left, right) {
+  return left?.type === right?.type && left?.id === right?.id;
+}
+
+function selectionClass(entity) {
+  return [
+    sameEntity(selectionState.hovered, entity) ? "hovered" : "",
+    sameEntity(selectionState.selected, entity) ? "selected" : "",
+  ].filter(Boolean).join(" ");
+}
+
+function renderSelectionVisuals() {
+  svg.querySelectorAll("[data-selection-type]").forEach((element) => {
+    const entity = {
+      type: element.dataset.selectionType,
+      id: element.dataset.selectionId,
+    };
+    element.classList.toggle("hovered", sameEntity(selectionState.hovered, entity));
+    element.classList.toggle("selected", sameEntity(selectionState.selected, entity));
+  });
+}
+
 function renderTopologyFaces(model) {
   faceLayer.replaceChildren();
   if (!model) {
@@ -232,17 +262,24 @@ function renderTopologyFaces(model) {
     return;
   }
   model.faces.forEach((face) => {
-    const polygon = el("polygon", {
+    const space = project.spaces?.status === "active"
+      ? project.spaces.spaces.find((candidate) => candidate.faceId === face.id)
+      : null;
+    const attributes = {
       points: face.pointsAttribute,
-      class: `topology-face ${selected?.type === "topology-face" && selected.id === face.id ? "selected" : ""}`,
-      "data-action": "select-topology-face",
-      "data-id": face.id,
+      class: `topology-face ${space ? selectionClass({ type: "space", id: space.id }) : ""}`,
+      "aria-label": space ? `${space.name}, ${face.areaLabel}` : `Derived face, ${face.areaLabel}`,
+    };
+    if (space) Object.assign(attributes, {
+      "data-action": "select-canonical-space",
+      "data-selection-type": "space",
+      "data-selection-id": space.id,
       tabindex: 0,
       role: "button",
-      "aria-label": `Derived face, ${face.areaLabel}`,
     });
+    const polygon = el("polygon", attributes);
     const title = el("title");
-    title.textContent = `Derived face · ${face.areaLabel}`;
+    title.textContent = space ? `${space.name} · ${face.areaLabel}` : `Derived face · ${face.areaLabel}`;
     polygon.append(title);
     faceLayer.append(polygon);
     if (state.showLabels) {
@@ -273,8 +310,10 @@ function renderTopologyWalls(model) {
   if (!model) return;
   model.walls.forEach((wall) => {
     const group = el("g", {
-      class: `topology-wall-group ${selected?.type === "topology-wall" && selected.id === wall.id ? "selected" : ""}`,
+      class: `topology-wall-group ${selectionClass({ type: "wall", id: wall.id })}`,
       "data-wall-id": wall.id,
+      "data-selection-type": "wall",
+      "data-selection-id": wall.id,
     });
     group.append(el("line", {
       x1: wall.x1, y1: wall.y1, x2: wall.x2, y2: wall.y2,
@@ -288,8 +327,7 @@ function renderTopologyWalls(model) {
     const hit = el("line", {
       x1: wall.x1, y1: wall.y1, x2: wall.x2, y2: wall.y2,
       class: "topology-wall-hit topology-hit-target",
-      "data-action": "select-topology-wall",
-      "data-id": wall.id,
+      "data-action": "select-canonical-wall",
       tabindex: 0,
       role: "button",
       "aria-label": `Physical wall, ${wall.lengthLabel} long, ${wall.thicknessLabel} thick`,
@@ -307,8 +345,10 @@ function renderTopologyJunctions(model) {
   if (!model) return;
   model.junctions.forEach((junction) => {
     const group = el("g", {
-      class: `topology-junction-group ${selected?.type === "topology-junction" && selected.id === junction.id ? "selected" : ""}`,
+      class: `topology-junction-group ${selectionClass({ type: "node", id: junction.id })}`,
       "data-node-id": junction.id,
+      "data-selection-type": "node",
+      "data-selection-id": junction.id,
     });
     group.append(el("circle", { cx: junction.x, cy: junction.y, r: 78, class: "topology-junction" }));
     const hit = el("circle", {
@@ -316,8 +356,7 @@ function renderTopologyJunctions(model) {
       cy: junction.y,
       r: 190,
       class: "topology-junction-hit topology-hit-target",
-      "data-action": "select-topology-junction",
-      "data-id": junction.id,
+      "data-action": "select-canonical-node",
       tabindex: 0,
       role: "button",
       "aria-label": `Canonical junction, degree ${junction.degree}`,
@@ -351,7 +390,8 @@ function renderCoverage() {
 }
 
 function renderSelection() {
-  if (!selected) {
+  const resolved = resolveCanonicalSelection(project, selectionState.selected);
+  if (!resolved) {
     selectionForm.hidden = true;
     emptySelection.hidden = false;
     selectionForm.replaceChildren();
@@ -359,31 +399,35 @@ function renderSelection() {
   }
   emptySelection.hidden = true;
   selectionForm.hidden = false;
-  if (selected.type === "topology-face") {
-    const face = topologyRenderModel?.faces.find((item) => item.id === selected.id);
-    if (!face) { selected = null; return renderSelection(); }
+  if (resolved.type === "space") {
+    const face = topologyRenderModel?.faces.find((item) => item.id === resolved.faceId);
     selectionForm.innerHTML = `
-      <div><div class="selection-name">Derived face</div><div class="selection-type">Read-only · no room semantics</div></div>
-      <div class="selection-field">Area <span>${escapeHtml(face.areaLabel)}</span></div>
-      <div class="selection-field">Boundary <span>${face.boundary.length} wall segments</span></div>
-      <p class="field-note">${escapeHtml(face.id)}<br>Polygon and area are derived from canonical directed wall references.</p>`;
-  } else if (selected.type === "topology-wall") {
-    const wall = topologyRenderModel?.walls.find((item) => item.id === selected.id);
-    if (!wall) { selected = null; return renderSelection(); }
+      <div><div class="selection-name">${escapeHtml(resolved.name)}</div><div class="selection-type">Semantic space · read-only</div></div>
+      <div class="selection-field">Category <span>${escapeHtml(resolved.category)}</span></div>
+      <div class="selection-field">Role <span>${escapeHtml(resolved.architecturalRole)}</span></div>
+      <div class="selection-field">Enclosure <span>${escapeHtml(resolved.enclosure)}</span></div>
+      ${face ? `<div class="selection-field">Centre-line area <span>${escapeHtml(face.areaLabel)}</span></div>` : ""}
+      <p class="field-note">${escapeHtml(resolved.id)}<br>Current derived face: ${escapeHtml(resolved.faceId)}</p>`;
+  } else if (resolved.type === "wall") {
+    const classification = resolved.classification === "internalShared"
+      ? "Internal / shared"
+      : resolved.classification === "exterior"
+        ? "Exterior"
+        : "Non-face boundary";
     selectionForm.innerHTML = `
       <div><div class="selection-name">Physical wall</div><div class="selection-type">Canonical centre-line · read-only</div></div>
-      <div class="selection-field">Length <span>${escapeHtml(wall.lengthLabel)}</span></div>
-      <div class="selection-field">Thickness <span>${escapeHtml(wall.thicknessLabel)}</span></div>
-      <p class="field-note">${escapeHtml(wall.id)}<br>${escapeHtml(wall.startNodeId)} → ${escapeHtml(wall.endNodeId)}</p>`;
+      <div class="selection-field">Classification <span>${classification}</span></div>
+      <div class="selection-field">Orientation <span>${escapeHtml(resolved.orientation)}</span></div>
+      <div class="selection-field">Length <span>${escapeHtml(formatArchitecturalLength(resolved.lengthUm))}</span></div>
+      <div class="selection-field">Thickness <span>${escapeHtml(formatArchitecturalLength(resolved.thicknessUm))}</span></div>
+      <p class="field-note">${escapeHtml(resolved.id)}<br>${escapeHtml(resolved.startNodeId)} → ${escapeHtml(resolved.endNodeId)}</p>`;
   } else {
-    const junction = topologyRenderModel?.junctions.find((item) => item.id === selected.id);
-    if (!junction) { selected = null; return renderSelection(); }
     selectionForm.innerHTML = `
       <div><div class="selection-name">Canonical junction</div><div class="selection-type">Shared node · read-only</div></div>
-      <div class="selection-field">Connected walls <span>${junction.degree}</span></div>
-      <div class="selection-field">X from origin <span>${escapeHtml(junction.xLabel)}</span></div>
-      <div class="selection-field">Y from origin <span>${escapeHtml(junction.yLabel)}</span></div>
-      <p class="field-note">${escapeHtml(junction.id)}</p>`;
+      <div class="selection-field">Connected walls <span>${resolved.degree}</span></div>
+      <div class="selection-field">X from origin <span>${escapeHtml(formatArchitecturalLength(resolved.xUm))}</span></div>
+      <div class="selection-field">Y from origin <span>${escapeHtml(formatArchitecturalLength(resolved.yUm))}</span></div>
+      <p class="field-note">${escapeHtml(resolved.id)}<br>${resolved.connectedWallIds.map(escapeHtml).join(", ")}</p>`;
   }
 }
 
@@ -392,8 +436,15 @@ function escapeHtml(value) {
 }
 
 function render() {
+  selectionState = reconcileCanonicalSelection(selectionState, project);
   topologyRenderModel = project.topology?.status === "active"
     ? createTopologySvgRenderModel(project.topology)
+    : null;
+  selectionHitModel = project.topology?.status === "active"
+    ? createCanonicalHitTestModel(
+        project.topology,
+        project.spaces?.status === "active" ? project.spaces : undefined,
+      )
     : null;
   renderSite();
   renderTopologyFaces(topologyRenderModel);
@@ -460,38 +511,71 @@ function setTool(tool) {
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
   document.querySelector("#canvas-title").textContent = "Inspect canonical topology";
-  document.querySelector("#canvas-hint").textContent = "Select faces, physical walls, and junctions · read-only";
+  document.querySelector("#canvas-hint").textContent = "Select semantic spaces, physical walls, and junctions · read-only";
   renderHandles();
 }
 
-function startDrag(event, target) {
-  const action = target.dataset.action;
-  if (action === "select-topology-face") selected = { type: "topology-face", id: target.dataset.id };
-  else if (action === "select-topology-wall") selected = { type: "topology-wall", id: target.dataset.id };
-  else if (action === "select-topology-junction") selected = { type: "topology-junction", id: target.dataset.id };
-  else return;
-  event.preventDefault();
-  render();
+function entityFromSelectionTarget(target) {
+  const type = target?.dataset.selectionType;
+  const id = target?.dataset.selectionId;
+  return id && ["space", "wall", "node"].includes(type) ? { type, id } : null;
+}
+
+function hitTestPointer(event) {
+  if (!selectionHitModel) return null;
+  const matrix = svg.getScreenCTM();
+  if (!matrix) return null;
+  const inverse = matrix.inverse();
+  const point = new DOMPoint(event.clientX, event.clientY).matrixTransform(inverse);
+  const origin = new DOMPoint(0, 0).matrixTransform(inverse);
+  const xStep = new DOMPoint(1, 0).matrixTransform(inverse);
+  const yStep = new DOMPoint(0, 1).matrixTransform(inverse);
+  return hitTestCanonicalSelection(
+    selectionHitModel,
+    { xUm: point.x * 1_000, yUm: point.y * 1_000 },
+    {
+      xUmPerCssPixel: Math.max(Number.EPSILON, Math.abs(xStep.x - origin.x) * 1_000),
+      yUmPerCssPixel: Math.max(Number.EPSILON, Math.abs(yStep.y - origin.y) * 1_000),
+    },
+  );
 }
 
 svg.addEventListener("pointerdown", (event) => {
-  const target = event.target.closest("[data-action]");
-  if (target) {
-    startDrag(event, target);
-    return;
-  }
-  selected = null;
-  render();
+  const hit = hitTestPointer(event);
+  selectionState = hit
+    ? selectCanonicalEntity(selectionState, hit.entity)
+    : clearCanonicalSelection(selectionState);
+  event.preventDefault();
+  renderSelectionVisuals();
+  renderSelection();
+});
+
+svg.addEventListener("pointermove", (event) => {
+  const hit = hitTestPointer(event);
+  const next = hit?.entity ?? null;
+  if (sameEntity(selectionState.hovered, next)) return;
+  selectionState = setHoveredEntity(selectionState, next);
+  renderSelectionVisuals();
+});
+
+svg.addEventListener("pointerleave", () => {
+  if (!selectionState.hovered) return;
+  selectionState = clearHoveredEntity(selectionState);
+  renderSelectionVisuals();
 });
 
 svg.addEventListener("keydown", (event) => {
   if (event.key !== "Enter" && event.key !== " ") return;
-  const target = event.target.closest?.("[data-action]");
-  if (target) startDrag(event, target);
+  const entity = entityFromSelectionTarget(event.target.closest?.("[data-selection-type]"));
+  if (!entity) return;
+  selectionState = selectCanonicalEntity(selectionState, entity);
+  event.preventDefault();
+  renderSelectionVisuals();
+  renderSelection();
 });
 
 function deleteSelection() {
-  if (selected) showToast("Topology geometry is read-only in A2.6");
+  if (selectionState.selected) showToast("Topology geometry is read-only in B1");
 }
 
 document.querySelectorAll("[data-tool]").forEach((button) => button.addEventListener("click", () => setTool(button.dataset.tool)));
@@ -588,7 +672,6 @@ document.querySelector("#reset-plan").addEventListener("click", () => {
   pushHistory();
   project = createOption3ProjectV2();
   state = projectToLegacyEditorState(project);
-  selected = null;
   render(); saveState(); showToast("Plan reset");
 });
 
@@ -617,6 +700,9 @@ document.querySelector("#export-svg").addEventListener("click", () => {
   copy.querySelector("#interaction-layer")?.remove();
   copy.querySelector("#legacy-comparison-layer")?.remove();
   copy.querySelectorAll(".topology-hit-target").forEach((target) => target.remove());
+  copy.querySelectorAll(".hovered, .selected").forEach((target) => {
+    target.classList.remove("hovered", "selected");
+  });
   copy.querySelector("#grid-layer")?.remove();
   copy.setAttribute("viewBox", `0 0 ${state.site.width} ${state.site.depth}`);
   copy.setAttribute("width", `${state.site.width / 25.4}in`);
