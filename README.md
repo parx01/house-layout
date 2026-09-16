@@ -1,6 +1,18 @@
 # Plan 66 house-plan editor
 
-Plan 66 is a local SVG editor for inspecting the OPTION-3 canonical physical-wall topology and its derived bounded faces. In A2.6 the visible plan is topology-native and read-only; legacy rectangles remain compatibility/reference data and can be shown only through the optional comparison overlay.
+Plan 66 is being built as a **general-purpose orthogonal 2D floor-plan editor**. Option-3 is the current curated project, migration/reference source, and regression fixture; it is not the permanent product template.
+
+The current browser experience still opens the Option-3 canonical physical-wall topology because that project is the engineering fixture used to build and verify the geometry foundation. The hard architectural requirement is that users will ultimately be able to create a new project from empty topology, draw/delete partitions and exterior walls, split/merge semantic spaces, edit wall thickness, reshape the footprint, and save/reload arbitrary orthogonal plans without depending on Option-3 IDs or assets.
+
+See:
+
+- `docs/general-floor-plan-editor-architecture.md` — accepted architectural decision and generalization requirements
+- `docs/revised-a4-phase-b-roadmap.md` — current dependency order through generic project creation and topology authoring
+- `docs/phase-b-polished-interaction-plan.md` — product interaction/authoring acceptance criteria.
+
+## Current development fixture
+
+At the current stage the visible plan is topology-native Option-3. Legacy rectangles remain compatibility/reference data and can be shown only through the optional comparison overlay.
 
 ## Open it
 
@@ -14,39 +26,42 @@ Open `http://127.0.0.1:8765/`. Keep the entire `dist` folder together because th
 
 ## Inspect the canonical plan
 
-- Select a bounded face to inspect its exact derived area and directed-wall boundary count.
-- Select a physical wall to inspect its canonical ID, centre-line length, endpoints, and thickness.
-- Select a junction to inspect its canonical ID, degree, and exact coordinates.
+- Select semantic spaces, physical walls, and canonical junctions.
+- Inspect wall classification, dimensions, thickness, semantic role/enclosure, and junction connectivity.
 - Toggle **Legacy comparison** only when comparing the old rectangle tracing against canonical geometry.
 - Zoom with the toolbar and scroll the drawing viewport independently when the plan is larger than the canvas.
-- Room/wall creation, deletion, and geometry dragging remain disabled until the later interaction phase.
+- General wall creation/deletion remains a scheduled topology-authoring stage; existing-wall direct manipulation is the next interaction milestone.
 
-The browser saves a strictly validated ProjectV2 document locally. **Save project** downloads the same V2 format. A corrupt project or an unsupported schema version is rejected explicitly; it is never shallow-merged into defaults. A1-era ProjectV2 saves are recovered by an explicit schema-revision migration before validation.
+The browser currently saves a strictly validated ProjectV2 document locally. ProjectV2 remains the historical Option-3 document contract. Before general topology authoring is considered complete, the roadmap requires a generic next-major project schema with an explicit ProjectV2 migration so blank/non-Option-3 projects do not inherit Option-3-only identity/recovery assumptions.
 
-## Exact site and supplied coverage limit
+## Exact Option-3 site and supplied coverage limit
 
 - Frontage: **49'2"**
 - Depth: **79'2"**
 - Plot area: **3,892.3611 sq ft**
 - Supplied 66% maximum: **2,568.9583 sq ft**
 
-The 66% figure is recorded as user-supplied and unverified. The editable 4-ft side, 8-ft minimum rear, and 10-ft preferred rear values are design targets, not statutory setbacks. The front target remains flexible and north remains unknown until authoritative information is available.
+These values belong to the Option-3 fixture, not to the editor globally.
 
-The drawing itself labels the front road as 12.00 m wide, so ProjectV2 retains 12,000,000 µm with `referencePlanSuppliedUnverified` provenance. This is plan metadata, not independent confirmation. The tracing image remains calibrated to the original Option-3 property when experimental site dimensions are edited; the site boundary, grid, target envelope, and drawing frame follow the edited dimensions.
+The 66% figure is recorded as user-supplied and unverified. The future A4 coverage engine must consume a generic project policy rather than encode 66% as an algorithmic constant. The editable 4-ft side, 8-ft minimum rear, and 10-ft preferred rear values are design targets, not statutory setbacks.
 
-The visible **1,969.11 sq ft** covered-area number is explicitly a legacy rectangle-prototype estimate. ProjectV2 does not treat it as an authoritative building footprint. Exterior-envelope coverage is deferred to A4.
+The drawing itself labels the front road as 12.00 m wide, so ProjectV2 retains 12,000,000 µm with `referencePlanSuppliedUnverified` provenance. This is Option-3 metadata, not independent confirmation or a future generic-project default.
 
-## A0/A1 engineering structure
+The visible historical **1,969.11 sq ft** covered-area number is a legacy rectangle-prototype estimate. It is not authoritative building geometry and is scheduled for retirement from normal coverage UI when A4-Coverage lands.
 
-- `src/core`: branded integer unit helpers, geometry primitives, site calculations, design envelopes, and warning categories.
-- `src/project`: ProjectV2 types, strict validation, and the Option-3 baseline.
-- `src/topology`: canonical node/wall graph, structural validation, A2.2 insertion/splitting, and A2.5 transactional movement operations.
-- `src/spaces`: A2.4 renderer-independent, derived bounded-face extraction from canonical topology.
-- `src/persistence`: schema detection, V1 recovery wrapping, ProjectV2 serialization, and browser storage.
-- `src/ui`: legacy compatibility plus the pure topology-to-SVG render adapter.
-- `fixtures`: immutable original V1 state and reference-image identity.
-- `docs`: ProjectV2 boundary and coordinate/orientation convention.
-- `test`: Vitest coverage for units, site calculations, validation, recovery, and preserved assets.
+## Engineering structure
+
+- `src/core`: branded integer units, geometry primitives, site calculations, design envelopes, and warning categories.
+- `src/project`: project schemas/validation, canonical project transactions, and Option-3 fixture factories.
+- `src/topology`: generic canonical node/wall graph, insertion/splitting, validation, and movement operations.
+- `src/spaces`: generic derived bounded-face extraction, semantic identities/reconciliation, and architectural understanding.
+- `src/building`: topology-derived exterior boundary, physical exterior envelope, and footprint-impact contracts.
+- `src/interaction`: UI-independent transaction lifecycle and canonical selection/hit testing.
+- `src/persistence`: version detection/migration/serialization and the current Option-3 browser-storage adapter.
+- `src/ui`: topology-to-SVG rendering and legacy compatibility adapters.
+- `fixtures`: immutable original Option-3 V1/reference assets used for migration/regression.
+- `docs`: architectural decisions, roadmap, schema boundaries, topology/semantic design notes.
+- `test`: unit/integration/regression coverage, increasingly including non-Option-3 synthetic topology.
 
 Install dependencies once, then run:
 
@@ -58,26 +73,28 @@ npm run build
 
 `npm run build` compiles the TypeScript foundation to `dist/foundation`.
 
-A2.1 establishes only the internal serialized topology graph. The current Option-3 rectangles are not converted or rendered as topology yet; see `docs/topology-a2-1.md` for the centre-line convention and validation boundary.
+## Foundation history
 
-A2.2 adds deterministic wall insertion, endpoint reuse, T/X junction canonicalization, segment splitting, and explicit wall-ID remapping. It still does not convert Option-3 or change the editor UI; see `docs/topology-a2-2.md`.
+A2.1 established the canonical internal node/wall topology graph and orthogonal wall model.
 
-A2.3 builds the Option-3 physical wall graph through those A2.2 operations and activates it in the normal ProjectV2 baseline. The fixed reference and V1 rectangles remain separate recovery sources, and semantic spaces/openings remain deferred; see `docs/topology-a2-3.md`.
+A2.2 added generic deterministic wall insertion, endpoint reuse, T/X junction canonicalization, segment splitting, and wall-ID remapping.
 
-A2.3.1 prevents that graph from becoming stale while the legacy rectangle UI remains active. Geometry edits demote topology, presentation-only changes preserve it, arbitrary V1 projects do not receive the stock graph, and active geometry must remain inside the current site. The dev-only overlay can be regenerated with `npm run diagnostic:topology-overlay`; see `docs/topology-a2-3-1.md`.
+A2.3 curated the Option-3 physical wall graph through those generic operations; Option-3-specific coordinates live in fixture/project construction rather than the topology model.
 
-A2.4 deterministically derives 13 bounded faces for Option-3 from directed wall half-edges. Faces and exact areas are runtime products rather than persisted duplicate geometry; semantic rooms remain deferred. See `docs/topology-a2-4.md`.
+A2.4 derives bounded faces from directed canonical wall half-edges. Faces and areas are runtime products rather than persisted room rectangles.
 
-A2.5 adds pure perpendicular wall-run and orthogonality-preserving junction movement. Candidate copies must pass topology validation and retain the same A2.4 face boundaries before they are returned; no production dragging or persistence change is included. See `docs/topology-a2-5.md`.
+A2.5 adds perpendicular wall-run and orthogonality-preserving junction movement with validation.
 
-A2.6 switches the SVG editor to canonical topology walls/nodes and A2.4-derived faces. Wall bands use exact centre-line thickness, every topology entity has a read-only hit target, and the old rectangles are available only as a non-interactive comparison layer. See `docs/topology-a2-6.md`.
+A2.6/A2.6.1 made canonical topology authoritative independently of legacy rectangles and introduced validated project-level topology updates.
 
-A3.1 adds persistent semantic `SpaceId` records with strict bindings to currently derived faces. The Option-3 baseline remains unmapped and deferred until A3.2; no semantic editing UI or automatic remapping is included. See `docs/spaces-a3-1.md`.
+A3 introduced persistent semantic `SpaceId` identity, explicit architectural role/enclosure, safe face rebinding, split/merge ambiguity detection, and architectural understanding.
 
-A2.6.1 makes canonical topology authoritative independently of legacy rectangles and adds the validated project transaction for accepting A2.5 movement results. Site containment, truthful status, conservative V1 recovery, and explicit semantic-binding safety remain enforced. See `docs/topology-a2-6-1.md`.
+A4-Core derives true exterior walls, physical exterior wall-face envelopes, and transaction-level footprint impact without using semantic names or legacy rectangles.
 
-B1 adds runtime-only canonical selection for persistent semantic spaces, walls, and nodes. Pointer targeting uses deterministic node → wall → space precedence with zoom-aware screen tolerances; hover and selection reconcile by stable identity without changing ProjectV2. Geometry editing remains deferred to B2.
+B0 adds the immutable preview/commit/cancel interaction lifecycle. B1 adds runtime-only canonical space/wall/node selection with deterministic node → wall → space hit precedence.
+
+The future path is **B2 movement → A4-Coverage → B3 typed dimensions → generic ProjectV3/new-project foundation → topology authoring → snapping → inspector/semantic editing → polish → blank-project real-use QA**.
 
 ## Construction note
 
-The supplied PDF remains a visual reference. Property dimensions, permissions, setbacks, and regulations must be confirmed by a qualified architect and the relevant local authority before construction.
+The supplied PDF and project metadata remain design/reference information. Property dimensions, permissions, setbacks, and regulations must be confirmed by a qualified architect and the relevant local authority before construction.
